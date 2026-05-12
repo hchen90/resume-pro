@@ -93,6 +93,26 @@ export default async function Home({
       </section>
 
       <section>
+        <h2 className="mb-4 text-2xl font-semibold">{t.tools}</h2>
+        <Link
+          href={`/tools/job-match?${query}`}
+          className="block rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-lg font-semibold">{t.jobMatchToolName}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-muted)]">
+                {t.jobMatchToolDescription}
+              </p>
+            </div>
+            <span className="inline-flex rounded-lg bg-[var(--app-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--app-accent)] ring-1 ring-[var(--app-accent-border)]">
+              {t.openTool}
+            </span>
+          </div>
+        </Link>
+      </section>
+
+      <section>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-semibold">{t.myResumes}</h2>
           <span className="text-sm text-zinc-500">

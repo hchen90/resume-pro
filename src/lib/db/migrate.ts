@@ -37,6 +37,17 @@ export async function ensureDatabase() {
 
       CREATE INDEX IF NOT EXISTS resume_nodes_resume_order_idx
       ON resume_nodes (resume_id, sort_order);
+
+      CREATE TABLE IF NOT EXISTS job_descriptions (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS job_descriptions_updated_idx
+      ON job_descriptions (updated_at);
     `);
   } else {
     await client.db.execute(sql`
@@ -64,6 +75,19 @@ export async function ensureDatabase() {
     await client.db.execute(sql`
       CREATE INDEX IF NOT EXISTS resume_nodes_resume_order_idx
       ON resume_nodes (resume_id, sort_order);
+    `);
+    await client.db.execute(sql`
+      CREATE TABLE IF NOT EXISTS job_descriptions (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `);
+    await client.db.execute(sql`
+      CREATE INDEX IF NOT EXISTS job_descriptions_updated_idx
+      ON job_descriptions (updated_at);
     `);
   }
 

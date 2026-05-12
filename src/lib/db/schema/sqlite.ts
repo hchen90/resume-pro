@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const resumes = sqliteTable("resumes", {
   id: text("id").primaryKey(),
@@ -21,3 +21,15 @@ export const resumeNodes = sqliteTable("resume_nodes", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const jobDescriptions = sqliteTable(
+  "job_descriptions",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [index("job_descriptions_updated_idx").on(table.updatedAt)],
+);

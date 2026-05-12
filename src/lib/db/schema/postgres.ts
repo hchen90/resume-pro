@@ -1,4 +1,4 @@
-import { integer, pgTable, text } from "drizzle-orm/pg-core";
+import { index, integer, pgTable, text } from "drizzle-orm/pg-core";
 
 export const resumes = pgTable("resumes", {
   id: text("id").primaryKey(),
@@ -21,3 +21,15 @@ export const resumeNodes = pgTable("resume_nodes", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+export const jobDescriptions = pgTable(
+  "job_descriptions",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [index("job_descriptions_updated_idx").on(table.updatedAt)],
+);
