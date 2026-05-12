@@ -5,6 +5,7 @@ import { createResumeAction } from "@/app/actions";
 import { SystemSettings } from "@/components/system-settings";
 import { listResumes } from "@/lib/db/resume-repository";
 import { dictionaries, resolveLocale } from "@/lib/i18n";
+import { getCurrentVersion } from "@/lib/release-notes";
 import {
   defaultUiStyle,
   localeCookieName,
@@ -30,10 +31,21 @@ export default async function Home({
   );
   const t = dictionaries[locale];
   const resumes = await listResumes();
+  const currentVersion = getCurrentVersion();
+  const query = settingsQuery({ lang: locale, style: uiStyle });
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-6 py-10">
-      <div className="flex justify-end">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Link
+          href={`/release-notes?${query}`}
+          className="inline-flex items-center gap-2 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)] shadow-sm transition hover:bg-[var(--app-muted-surface)]"
+        >
+          <span>{t.releaseNotes}</span>
+          <span className="text-[var(--app-muted)]">
+            {t.currentVersion} {currentVersion}
+          </span>
+        </Link>
         <SystemSettings
           currentLocale={locale}
           currentUiStyle={uiStyle}
@@ -96,7 +108,7 @@ export default async function Home({
             {resumes.map((resume) => (
               <Link
                 key={resume.id}
-                href={`/resumes/${resume.id}?${settingsQuery({ lang: locale, style: uiStyle })}`}
+                href={`/resumes/${resume.id}?${query}`}
                 className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
               >
                 <div className="text-lg font-semibold">{resume.title}</div>

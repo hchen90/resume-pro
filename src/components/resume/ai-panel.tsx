@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import type { AiPlan } from "@/lib/ai/patch";
 import type { AiMessage, AiMode, AiResponse } from "@/lib/ai/types";
 import { dictionaries, type Locale } from "@/lib/i18n";
 import type { ResumeWithNodes } from "@/lib/resume/types";
@@ -12,6 +13,11 @@ type AiPanelProps = {
   locale: Locale;
   onCollapse: () => void;
   onResumeUpdated: (resume: ResumeWithNodes) => void;
+};
+
+type PendingPlan = {
+  originalMessage: string;
+  plan: AiPlan;
 };
 
 export function AiPanel({
@@ -31,6 +37,8 @@ export function AiPanel({
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<PendingPlan | null>(null);
+  const [selectedPlanStepIds, setSelectedPlanStepIds] = useState<string[]>([]);
 
   async function sendMessage() {
     if (!input.trim() || isLoading) {
@@ -64,6 +72,16 @@ export function AiPanel({
         ...current,
         { role: "assistant", content: payload.message },
       ]);
+      if (payload.plan) {
+        setPendingPlan({
+          originalMessage: userMessage.content,
+          plan: payload.plan,
+        });
+        setSelectedPlanStepIds(payload.plan.steps.map((step) => step.id));
+      } else if (mode !== "plan") {
+        setPendingPlan(null);
+        setSelectedPlanStepIds([]);
+      }
       if (payload.resume) {
         onResumeUpdated(payload.resume);
       }
@@ -81,6 +99,73 @@ export function AiPanel({
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function executePendingPlan() {
+    if (!pendingPlan || isLoading || selectedPlanStepIds.length === 0) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const planToExecute = {
+        ...pendingPlan.plan,
+        steps: pendingPlan.plan.steps.filter((step) =>
+          selectedPlanStepIds.includes(step.id),
+        ),
+      };
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resumeId: resume.id,
+          selectedNodeId,
+          mode: "plan",
+          action: "execute_plan",
+          locale,
+          message: pendingPlan.originalMessage,
+          plan: planToExecute,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const payload = (await response.json()) as AiResponse;
+      setMessages((current) => [
+        ...current,
+        { role: "assistant", content: payload.message },
+      ]);
+      setPendingPlan(null);
+      setSelectedPlanStepIds([]);
+
+      if (payload.resume) {
+        onResumeUpdated(payload.resume);
+      }
+    } catch (error) {
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content:
+            error instanceof Error
+              ? `${t.aiError}：${error.message}`
+              : `${t.aiError}。`,
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function togglePlanStep(stepId: string) {
+    setSelectedPlanStepIds((current) =>
+      current.includes(stepId)
+        ? current.filter((id) => id !== stepId)
+        : [...current, stepId],
+    );
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -130,6 +215,61 @@ export function AiPanel({
         ))}
       </div>
 
+      {pendingPlan ? (
+        <div className="mt-4 rounded-lg border border-[var(--app-accent-border)] bg-[var(--app-accent-soft)] p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--app-accent)]">
+            {t.aiPlanReview}
+          </p>
+          <p className="mt-2 text-sm font-medium text-[var(--app-text)]">
+            {pendingPlan.plan.summary}
+          </p>
+          <div className="mt-3 space-y-2">
+            {pendingPlan.plan.steps.map((step) => (
+              <label
+                key={step.id}
+                className="flex cursor-pointer gap-2 rounded-md bg-[var(--app-surface)] p-3 text-sm ring-1 ring-[var(--app-border)]"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedPlanStepIds.includes(step.id)}
+                  onChange={() => togglePlanStep(step.id)}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="block font-semibold text-[var(--app-text)]">
+                    {step.title}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-[var(--app-muted)]">
+                    {step.description}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => void executePendingPlan()}
+              disabled={isLoading || selectedPlanStepIds.length === 0}
+              className="flex-1 rounded-md bg-[var(--app-primary)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[var(--app-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isLoading ? t.aiSending : t.aiExecutePlan}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPendingPlan(null);
+                setSelectedPlanStepIds([]);
+              }}
+              disabled={isLoading}
+              className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs font-semibold text-[var(--app-muted)] transition hover:bg-[var(--app-muted-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {t.aiCancelPlan}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <form
         onSubmit={handleSubmit}
         className="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-2 focus-within:border-[var(--app-accent)]"
@@ -148,7 +288,11 @@ export function AiPanel({
           <select
             id="ai-mode"
             value={mode}
-            onChange={(event) => setMode(event.target.value as AiMode)}
+            onChange={(event) => {
+              setMode(event.target.value as AiMode);
+              setPendingPlan(null);
+              setSelectedPlanStepIds([]);
+            }}
             className="max-w-[180px] rounded-md border border-[var(--app-border)] bg-[var(--app-muted-surface)] px-2 py-1.5 text-xs font-medium text-[var(--app-muted)] outline-none transition hover:bg-[var(--app-accent-soft)] focus:border-[var(--app-accent)]"
           >
             {Object.entries(t.aiModes).map(([value, label]) => (

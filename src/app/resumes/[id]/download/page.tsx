@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { PrintButton } from "@/components/resume/print-button";
-import { SystemSettings } from "@/components/system-settings";
 import { getResume } from "@/lib/db/resume-repository";
 import { dictionaries, resolveLocale } from "@/lib/i18n";
 import {
@@ -61,16 +60,6 @@ export default async function ResumeDownloadPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <SystemSettings
-            currentLocale={locale}
-            currentUiStyle={uiStyle}
-            labels={{
-              settings: t.settings,
-              language: t.language,
-              interfaceStyle: t.interfaceStyle,
-              uiStyles: t.uiStyles,
-            }}
-          />
           {resumeTemplates.map((item) => (
             <Link
               key={item.id}

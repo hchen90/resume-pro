@@ -48,7 +48,25 @@ JSON 格式：
   if (mode === "plan") {
     return `${common}
 
-当前是 Plan 模式。只输出修改计划、风险和建议顺序，不要生成 patch，不要声称已经修改简历。`;
+当前是 Plan 模式。你必须只返回 JSON，不要返回 Markdown。
+只生成执行计划，不要生成 patch，不要声称已经修改简历。
+每个 step 都要有稳定 id，例如 "step-1"、"step-2"。
+targetNodeIds 只填写当前简历上下文中真实存在且相关的节点 id，不确定则用空数组。
+JSON 格式：
+{
+  "message": "给用户看的简短说明，说明这是待确认计划",
+  "plan": {
+    "summary": "计划总览",
+    "steps": [
+      {
+        "id": "step-1",
+        "title": "步骤标题",
+        "description": "这个步骤会做什么、为什么做",
+        "targetNodeIds": ["相关节点 id"]
+      }
+    ]
+  }
+}`;
   }
 
   return `${common}
@@ -62,6 +80,31 @@ export function userPrompt(input: {
 }) {
   return `用户请求：
 ${input.message}
+
+当前简历上下文：
+${input.resumeContext}`;
+}
+
+export function approvedPlanExecutionPrompt(input: {
+  originalMessage: string;
+  planSummary: string;
+  steps: Array<{ title: string; description: string }>;
+  resumeContext: string;
+}) {
+  const steps = input.steps
+    .map((step, index) => `${index + 1}. ${step.title}\n${step.description}`)
+    .join("\n\n");
+
+  return `用户原始请求：
+${input.originalMessage}
+
+用户已经确认执行以下计划：
+${input.planSummary}
+
+确认的步骤：
+${steps}
+
+请只执行这些已确认步骤，生成必要的结构化 patches。不要执行未列出的改动。
 
 当前简历上下文：
 ${input.resumeContext}`;

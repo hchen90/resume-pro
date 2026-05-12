@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
-import { SystemSettings } from "@/components/system-settings";
 import { resumeTemplates } from "@/templates/resume/registry";
 import { dictionaries, type Locale } from "@/lib/i18n";
 import { createNode } from "@/lib/resume/defaults";
@@ -190,18 +189,6 @@ export function ResumeWorkspace({
                 <PanelIcon direction="left" />
               </button>
             </div>
-            <div className="mt-4">
-              <SystemSettings
-                currentLocale={locale}
-                currentUiStyle={uiStyle}
-                labels={{
-                  settings: t.settings,
-                  language: t.language,
-                  interfaceStyle: t.interfaceStyle,
-                  uiStyles: t.uiStyles,
-                }}
-              />
-            </div>
             <input
               value={resume.title}
               onChange={(event) => {
@@ -329,7 +316,15 @@ export function ResumeWorkspace({
             </div>
           </>
         ) : null}
-        <ResumePreview resume={resume} />
+        <ResumePreview
+          resume={resume}
+          labels={{
+            fit: t.previewFit,
+            zoomIn: t.previewZoomIn,
+            zoomOut: t.previewZoomOut,
+            actualSize: t.previewActualSize,
+          }}
+        />
       </section>
 
       <div className="no-print min-w-0">

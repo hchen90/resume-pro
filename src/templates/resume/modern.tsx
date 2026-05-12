@@ -30,7 +30,7 @@ function ModernTemplate({ resume }: ResumeTemplateProps) {
         {skills ? (
           <section className="mt-10">
             <h2 className="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-400">
-              Skills
+              {skills.title}
             </h2>
             <div className="mt-4 flex flex-wrap gap-2">
               {(skills.content.skills ?? []).map((skill) => (

@@ -4,7 +4,7 @@ import { getResumeTemplate, resumeTemplates } from "./registry";
 
 describe("resume template registry", () => {
   it("registers multiple templates", () => {
-    expect(resumeTemplates.length).toBeGreaterThanOrEqual(2);
+    expect(resumeTemplates.length).toBeGreaterThanOrEqual(6);
   });
 
   it("falls back to the classic template", () => {

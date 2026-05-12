@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createDefaultResumeNodes } from "@/lib/resume/defaults";
 import type { ResumeWithNodes } from "@/lib/resume/types";
 
-import { applyResumePatches, extractJsonResponse } from "./patch";
+import { aiPlanResponseSchema, applyResumePatches, extractJsonResponse } from "./patch";
 
 function sampleResume(): ResumeWithNodes {
   return {
@@ -86,5 +86,25 @@ describe("extractJsonResponse", () => {
     expect(extractJsonResponse("```json\n{\"message\":\"ok\"}\n```")).toBe(
       "{\"message\":\"ok\"}",
     );
+  });
+});
+
+describe("aiPlanResponseSchema", () => {
+  it("parses a structured plan and defaults target nodes", () => {
+    const parsed = aiPlanResponseSchema.parse({
+      message: "请确认以下计划。",
+      plan: {
+        summary: "优化项目经历。",
+        steps: [
+          {
+            id: "step-1",
+            title: "重写项目描述",
+            description: "突出业务结果和技术贡献。",
+          },
+        ],
+      },
+    });
+
+    expect(parsed.plan.steps[0].targetNodeIds).toEqual([]);
   });
 });

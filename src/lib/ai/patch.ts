@@ -40,7 +40,25 @@ export const aiEditResponseSchema = z.object({
   patches: z.array(resumePatchSchema).default([]),
 });
 
+export const aiPlanStepSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  targetNodeIds: z.array(z.string()).default([]),
+});
+
+export const aiPlanSchema = z.object({
+  summary: z.string(),
+  steps: z.array(aiPlanStepSchema).default([]),
+});
+
+export const aiPlanResponseSchema = z.object({
+  message: z.string(),
+  plan: aiPlanSchema,
+});
+
 export type ResumePatch = z.infer<typeof resumePatchSchema>;
+export type AiPlan = z.infer<typeof aiPlanSchema>;
 
 export function applyResumePatches(
   resume: ResumeWithNodes,
