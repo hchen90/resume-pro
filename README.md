@@ -2,11 +2,7 @@
 
 Resume Pro is an open-source, local-first AI resume editor for managing resumes, previewing multiple templates, improving content with AI, and scoring resume fit against job descriptions.
 
-<video src="./ResumePro.mp4" controls width="100%">
-  Your browser does not support the video tag.
-</video>
-
-[Watch the introduction video](./ResumePro.mp4)
+[Watch the introduction video](https://github.com/user-attachments/assets/4882beb8-16af-4e7c-8986-d2be5c994c0b)
 
 ## Highlights
 
@@ -16,14 +12,6 @@ Resume Pro is an open-source, local-first AI resume editor for managing resumes,
 - AI-assisted editing with chat suggestions, direct edit mode, and a Plan mode that lets users review changes before applying them.
 - Job fit analysis that compares saved job descriptions against existing resumes and returns a 10-point score, strengths, gaps, and improvement suggestions.
 - Browser-based local app with Electron development and packaging support for desktop use.
-
-## Preview
-
-![Resume Pro home page](./docs/home.png)
-
-![Editor with AI assistant](./docs/editor_ai_plan.png)
-
-![Job fit score result](./docs/role_fit_radar_score.png)
 
 ## Tech Stack
 
