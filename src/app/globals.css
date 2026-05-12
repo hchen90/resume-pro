@@ -1,26 +1,120 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --app-bg: #f6f8fa;
+  --app-surface: #ffffff;
+  --app-muted-surface: #f6f8fa;
+  --app-border: #d0d7de;
+  --app-text: #24292f;
+  --app-muted: #57606a;
+  --app-accent: #0969da;
+  --app-accent-hover: #0757b8;
+  --app-accent-soft: #ddf4ff;
+  --app-accent-border: #b6e3ff;
+  --app-primary: #1f883d;
+  --app-primary-hover: #1a7f37;
+  --background: var(--app-bg);
+  --foreground: var(--app-text);
+}
+
+html[data-ui-style="warm"] {
+  --app-bg: #f7f2ea;
+  --app-surface: #fffaf3;
+  --app-muted-surface: #f3eadc;
+  --app-border: #d8c7ad;
+  --app-text: #2f2419;
+  --app-muted: #6f5d49;
+  --app-accent: #9a6700;
+  --app-accent-hover: #7d5200;
+  --app-accent-soft: #fff1c2;
+  --app-accent-border: #eac55f;
+  --app-primary: #2da44e;
+  --app-primary-hover: #238636;
+}
+
+html[data-ui-style="slate"] {
+  --app-bg: #eef2f6;
+  --app-surface: #ffffff;
+  --app-muted-surface: #f1f5f9;
+  --app-border: #cbd5e1;
+  --app-text: #0f172a;
+  --app-muted: #475569;
+  --app-accent: #2563eb;
+  --app-accent-hover: #1d4ed8;
+  --app-accent-soft: #dbeafe;
+  --app-accent-border: #93c5fd;
+  --app-primary: #0f766e;
+  --app-primary-hover: #0d665f;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    width: 210mm;
+    min-height: 297mm;
+    background: white;
+    margin: 0 !important;
+  }
+
+  body,
+  .print-page,
+  .print-page * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    min-height: auto !important;
+    padding: 0 !important;
+  }
+
+  .print-page {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .print-page > article {
+    width: 210mm !important;
+    min-height: 297mm !important;
+  }
+
+  .print-page section,
+  .print-page header,
+  .print-page aside {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }
