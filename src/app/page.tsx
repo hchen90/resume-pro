@@ -63,6 +63,8 @@ export default async function Home({
             aiApiUrl: t.aiApiUrl,
             aiApiKey: t.aiApiKey,
             aiApiModel: t.aiApiModel,
+            aiCustomApiUrl: t.aiCustomApiUrl,
+            aiCustomProvider: t.aiCustomProvider,
             saveAiSettings: t.saveAiSettings,
             aiSettingsSaved: t.aiSettingsSaved,
             aiSettingsRestartRequired: t.aiSettingsRestartRequired,

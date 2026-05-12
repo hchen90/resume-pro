@@ -29,6 +29,8 @@ type SystemSettingsProps = {
     aiApiUrl: string;
     aiApiKey: string;
     aiApiModel: string;
+    aiCustomApiUrl: string;
+    aiCustomProvider: string;
     saveAiSettings: string;
     aiSettingsSaved: string;
     aiSettingsRestartRequired: string;
@@ -37,6 +39,42 @@ type SystemSettingsProps = {
 };
 
 const cookieMaxAge = 60 * 60 * 24 * 365;
+const aiProviderOptions = [
+  {
+    id: "openai",
+    label: "OpenAI",
+    apiUrl: "https://api.openai.com/v1",
+    defaultModel: "gpt-4o-mini",
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    apiUrl: "https://openrouter.ai/api/v1",
+    defaultModel: "anthropic/claude-3.5-sonnet",
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    apiUrl: "https://api.deepseek.com/v1",
+    defaultModel: "deepseek-chat",
+  },
+  {
+    id: "moonshot",
+    label: "Moonshot AI / Kimi",
+    apiUrl: "https://api.moonshot.cn/v1",
+    defaultModel: "moonshot-v1-8k",
+  },
+  {
+    id: "siliconflow",
+    label: "SiliconFlow",
+    apiUrl: "https://api.siliconflow.cn/v1",
+    defaultModel: "Qwen/Qwen2.5-7B-Instruct",
+  },
+] as const;
+
+const defaultModelNames = new Set<string>(
+  aiProviderOptions.map((provider) => provider.defaultModel),
+);
 
 export function SystemSettings({
   currentLocale,
@@ -54,6 +92,9 @@ export function SystemSettings({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">(
     "idle",
   );
+  const selectedAiProvider =
+    aiProviderOptions.find((provider) => provider.apiUrl === aiConfig.aiApiUrl)
+      ?.id ?? "custom";
 
   function updateSettings(next: { locale?: Locale; uiStyle?: UiStyle }) {
     const locale = next.locale ?? currentLocale;
@@ -88,6 +129,33 @@ export function SystemSettings({
     }
   }
 
+  function updateAiProvider(providerId: string) {
+    if (providerId === "custom") {
+      setAiConfig((current) => ({
+        ...current,
+        aiApiUrl: "",
+      }));
+      setSaveState("idle");
+      return;
+    }
+
+    const provider = aiProviderOptions.find((option) => option.id === providerId);
+
+    if (!provider) {
+      return;
+    }
+
+    setAiConfig((current) => ({
+      ...current,
+      aiApiUrl: provider.apiUrl,
+      aiApiModel:
+        current.aiApiModel === "" || defaultModelNames.has(current.aiApiModel)
+          ? provider.defaultModel
+          : current.aiApiModel,
+    }));
+    setSaveState("idle");
+  }
+
   return (
     <details className="group relative inline-block text-sm">
       <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-[var(--app-text)] shadow-sm transition hover:bg-[var(--app-muted-surface)] [&::-webkit-details-marker]:hidden">
@@ -107,7 +175,7 @@ export function SystemSettings({
         </span>
       </summary>
 
-      <div className="absolute right-0 z-30 mt-2 w-72 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-xl">
+      <div className="absolute right-0 z-30 mt-2 w-80 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-3 shadow-xl">
         <label className="block text-xs font-semibold text-[var(--app-muted)]">
           {labels.language}
           <select
@@ -149,17 +217,34 @@ export function SystemSettings({
             </p>
             <label className="mt-3 block text-xs font-medium text-[var(--app-muted)]">
               {labels.aiApiUrl}
-              <input
-                value={aiConfig.aiApiUrl}
-                onChange={(event) =>
-                  setAiConfig((current) => ({
-                    ...current,
-                    aiApiUrl: event.target.value,
-                  }))
-                }
-                className="mt-2 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-muted-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
-              />
+              <select
+                value={selectedAiProvider}
+                onChange={(event) => updateAiProvider(event.target.value)}
+                className="mt-2 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-muted-surface)] px-3 py-2 text-sm font-medium text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
+              >
+                {aiProviderOptions.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.label}
+                  </option>
+                ))}
+                <option value="custom">{labels.aiCustomProvider}</option>
+              </select>
             </label>
+            {selectedAiProvider === "custom" ? (
+              <label className="mt-3 block text-xs font-medium text-[var(--app-muted)]">
+                {labels.aiCustomApiUrl}
+                <input
+                  value={aiConfig.aiApiUrl}
+                  onChange={(event) =>
+                    setAiConfig((current) => ({
+                      ...current,
+                      aiApiUrl: event.target.value,
+                    }))
+                  }
+                  className="mt-2 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-muted-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
+                />
+              </label>
+            ) : null}
             <label className="mt-3 block text-xs font-medium text-[var(--app-muted)]">
               {labels.aiApiKey}
               <input
