@@ -1,47 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Resume Pro
 
-## Getting Started
+Resume Pro is an open-source, local-first AI resume editor for managing resumes, previewing multiple templates, improving content with AI, and scoring resume fit against job descriptions.
 
-First, run the development server:
+<video src="./ResumePro.mp4" controls width="100%">
+  Your browser does not support the video tag.
+</video>
+
+[Watch the introduction video](./ResumePro.mp4)
+
+## Highlights
+
+- Local-first by default, using SQLite out of the box with optional Postgres support.
+- Structured resume editing across personal information, summary, work experience, projects, education, skills, and other sections.
+- Multiple resume templates, including Classic, Modern, Compact, Elegant, Timeline, and Creative styles.
+- AI-assisted editing with chat suggestions, direct edit mode, and a Plan mode that lets users review changes before applying them.
+- Job fit analysis that compares saved job descriptions against existing resumes and returns a 10-point score, strengths, gaps, and improvement suggestions.
+- Browser-based local app with Electron development and packaging support for desktop use.
+
+## Preview
+
+![Resume Pro home page](./docs/home.png)
+
+![Editor with AI assistant](./docs/editor_ai_plan.png)
+
+![Job fit score result](./docs/role_fit_radar_score.png)
+
+## Tech Stack
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS
+- Drizzle ORM
+- SQLite / Postgres
+- LangChain OpenAI-compatible API
+- Electron
+
+## Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Start the local web app:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## AI And Database Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Resume Pro uses SQLite by default, with the local database stored at `./data/resume-pro.sqlite`. To use Postgres instead, configure `.env` with:
 
-## Supported `npm run` Commands
+```bash
+DATABASE_PROVIDER=postgres
+DATABASE_URL=postgres://user:password@localhost:5432/resume_pro
+```
 
-- `npm run dev` - start the Next.js development server.
-- `npm run dev:electron` - start Next.js and launch the Electron app in development mode.
-- `npm run electron:dev` - build the Electron main/preload bundle, then launch Electron against the local Next.js app.
-- `npm run release-notes:generate` - generate release notes.
-- `npm run build` - generate release notes and create a production Next.js build.
-- `npm run build:electron-main` - bundle the Electron main and preload scripts into `dist-electron`.
-- `npm run build:electron` - build the Next.js app, bundle Electron, and package the desktop app.
-- `npm run pack:electron` - build and create an unpacked Electron package for local inspection.
-- `npm run start` - start the production Next.js server after `npm run build`.
-- `npm run lint` - run ESLint.
-- `npm run typecheck` - run TypeScript type checking without emitting files.
-- `npm run test` - run the Vitest test suite once.
-- `npm run db:generate` - generate Drizzle database migration files.
-- `npm run db:push` - push the current Drizzle schema to the configured database.
+AI features use an OpenAI-compatible API:
 
-## Learn More
+```bash
+AI_API_URL=https://api.openai.com/v1
+AI_API_KEY=your-api-key
+AI_API_MODEL=gpt-4o-mini
+```
 
-To learn more about Next.js, take a look at the following resources:
+If `AI_API_KEY` is not configured, core resume editing still works. The AI assistant and job fit analysis will prompt for AI configuration.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Electron Desktop App
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Start Electron in development mode:
 
-## Deploy on Vercel
+```bash
+npm run dev:electron
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Build the desktop app:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run build:electron
+```
+
+Create an unpacked build for local inspection:
+
+```bash
+npm run pack:electron
+```
+
+## Common Commands
+
+- `npm run dev` - Start the Next.js development server.
+- `npm run dev:electron` - Start Next.js and open the Electron development app.
+- `npm run build` - Generate release notes and build the production Next.js app.
+- `npm run build:electron` - Build and package the Electron desktop app.
+- `npm run lint` - Run ESLint.
+- `npm run typecheck` - Run TypeScript type checking.
+- `npm run test` - Run the Vitest test suite.
+- `npm run db:generate` - Generate Drizzle database migration files.
+- `npm run db:push` - Push the current Drizzle schema to the configured database.
+
+## License
+
+Resume Pro is released under the [MIT License](./LICENSE).

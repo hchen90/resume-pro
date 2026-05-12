@@ -10,12 +10,15 @@ files:
   - .next/static/**
   - public/**
 mac:
+  icon: assets/icons/icon.icns
   target:
     - dmg
 win:
+  icon: assets/icons/icon.ico
   target:
     - nsis
 linux:
+  icon: assets/icons/icon.png
   target:
     - AppImage
 publish: null
