@@ -14,11 +14,30 @@ const gitFieldSeparator = "\u001f";
 const gitRecordSeparator = "\u001e";
 const fallbackVersion = `v${packageJson.version}`;
 
-const data = {
-  generatedAt: new Date().toISOString(),
-  currentVersion: getCurrentVersion(),
-  releases: getReleaseNotes(),
-};
+const existingData = readExistingReleaseNotes();
+const hasGitMetadata = isGitWorkTree();
+
+if (!hasGitMetadata && existingData) {
+  console.log(
+    `Using existing release notes for ${existingData.currentVersion} at ${path.relative(
+      projectRoot,
+      outputPath,
+    )}`,
+  );
+  process.exit(0);
+}
+
+const data = hasGitMetadata
+  ? {
+      generatedAt: new Date().toISOString(),
+      currentVersion: getCurrentVersion(),
+      releases: getReleaseNotes(),
+    }
+  : {
+      generatedAt: new Date().toISOString(),
+      currentVersion: existingData?.currentVersion ?? fallbackVersion,
+      releases: existingData?.releases ?? [],
+    };
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, `${JSON.stringify(data, null, 2)}\n`);
@@ -123,4 +142,25 @@ function runGit(args) {
   } catch {
     return null;
   }
+}
+
+function isGitWorkTree() {
+  return runGit(["rev-parse", "--is-inside-work-tree"]) === "true";
+}
+
+function readExistingReleaseNotes() {
+  try {
+    const data = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+
+    if (
+      typeof data.currentVersion === "string" &&
+      Array.isArray(data.releases)
+    ) {
+      return data;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
