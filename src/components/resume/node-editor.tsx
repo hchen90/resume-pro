@@ -16,6 +16,7 @@ type NodeEditorProps = {
   labels: {
     sectionTitle: string;
     content: string;
+    markdownHelp: string;
     addItem: string;
     deleteItem: string;
     itemTitle: string;
@@ -75,6 +76,9 @@ export function NodeEditor({ node, onChange, labels }: NodeEditorProps) {
             rows={14}
             className="mt-2 w-full resize-y rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 leading-7 outline-none focus:border-[var(--app-accent)]"
           />
+          <p className="mt-2 text-xs text-[var(--app-muted)]">
+            {labels.markdownHelp}
+          </p>
         </div>
       )}
     </div>
@@ -178,6 +182,9 @@ function ItemsField({
               rows={6}
               className="mt-1 w-full resize-y rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
             />
+            <span className="mt-2 block text-xs text-[var(--app-muted)]">
+              {labels.markdownHelp}
+            </span>
           </label>
         </div>
       ))}

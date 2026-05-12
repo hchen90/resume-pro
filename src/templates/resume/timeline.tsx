@@ -4,9 +4,9 @@ import {
   nodeItems,
   nonProfileNodes,
   profileNode,
-  splitLines,
 } from "@/lib/resume/format";
 
+import { MarkdownContent } from "./markdown-content";
 import type { ResumeTemplate, ResumeTemplateProps } from "./types";
 
 function TimelineTemplate({ resume }: ResumeTemplateProps) {
@@ -39,11 +39,11 @@ function TimelineTemplate({ resume }: ResumeTemplateProps) {
               {node.title}
             </h2>
             {node.type === "skills" ? (
-              <div className="grid grid-cols-3 gap-2 text-sm text-slate-700">
+              <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-sm text-slate-700">
                 {(node.content.skills ?? []).map((skill) => (
                   <span
                     key={skill}
-                    className="rounded-md bg-slate-100 px-3 py-2 font-medium"
+                    className="border-b border-slate-200 pb-1 font-medium"
                   >
                     {skill}
                   </span>
@@ -68,21 +68,19 @@ function TimelineTemplate({ resume }: ResumeTemplateProps) {
                       {item.subtitle ? (
                         <p className="mt-1 text-slate-600">{item.subtitle}</p>
                       ) : null}
-                      <div className="mt-3 space-y-2 leading-7 text-slate-700">
-                        {splitLines(item.description).map((line) => (
-                          <p key={line}>{line}</p>
-                        ))}
-                      </div>
+                      <MarkdownContent
+                        value={item.description}
+                        className="mt-3 space-y-2 leading-7 text-slate-700"
+                      />
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="space-y-2 text-sm leading-7 text-slate-700">
-                {splitLines(node.content.body).map((line) => (
-                  <p key={line}>{line}</p>
-                ))}
-              </div>
+              <MarkdownContent
+                value={node.content.body}
+                className="space-y-2 text-sm leading-7 text-slate-700"
+              />
             )}
           </section>
         ))}

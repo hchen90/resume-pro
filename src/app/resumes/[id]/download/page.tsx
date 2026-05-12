@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { PrintButton } from "@/components/resume/print-button";
+import { TemplateSelect } from "@/components/resume/template-select";
 import { getResume } from "@/lib/db/resume-repository";
 import { dictionaries, resolveLocale } from "@/lib/i18n";
 import {
@@ -41,13 +42,14 @@ export default async function ResumeDownloadPage({
 
   const selectedTemplate = getResumeTemplate(template ?? resume.templateId);
   const Template = selectedTemplate.component;
+  const query = settingsQuery({ lang: locale, style: uiStyle });
 
   return (
     <main className="flex min-h-screen flex-col items-center px-4 py-6">
       <div className="no-print mb-6 flex w-full max-w-6xl flex-col gap-4 rounded-xl bg-[var(--app-surface)] p-4 shadow-sm ring-1 ring-[var(--app-border)] lg:flex-row lg:items-center lg:justify-between">
         <div>
           <Link
-            href={`/resumes/${resume.id}?${settingsQuery({ lang: locale, style: uiStyle })}`}
+            href={`/resumes/${resume.id}?${query}`}
             className="text-sm text-[var(--app-muted)] hover:text-[var(--app-text)]"
           >
             {t.backToEdit}
@@ -60,23 +62,19 @@ export default async function ResumeDownloadPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {resumeTemplates.map((item) => (
-            <Link
-              key={item.id}
-              href={`/resumes/${resume.id}/download?template=${item.id}&${settingsQuery({ lang: locale, style: uiStyle })}`}
-              className={`rounded-lg border px-4 py-3 text-sm ${
-                item.id === selectedTemplate.id
-                  ? "border-[var(--app-accent-border)] bg-[var(--app-accent-soft)] text-[var(--app-accent)]"
-                  : "border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] hover:bg-[var(--app-muted-surface)]"
-              }`}
-              title={
+          <TemplateSelect
+            resumeId={resume.id}
+            selectedTemplateId={selectedTemplate.id}
+            settingsQuery={query}
+            label={t.defaultDownloadStyle}
+            templates={resumeTemplates.map((item) => ({
+              id: item.id,
+              name: item.name,
+              description:
                 t.templateDescriptions[item.id as TemplateDescriptionId] ??
-                item.description
-              }
-            >
-              {item.name}
-            </Link>
-          ))}
+                item.description,
+            }))}
+          />
           <PrintButton label={t.printPdf} />
         </div>
       </div>

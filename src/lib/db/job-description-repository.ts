@@ -74,3 +74,32 @@ export async function createJobDescription(input: {
 
   return jobDescription.id;
 }
+
+export async function updateJobDescription(
+  id: string,
+  input: {
+    title: string;
+    content: string;
+  },
+) {
+  await ensureDatabase();
+  const client = getDbClient();
+  const update = {
+    title: input.title,
+    content: input.content,
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (client.provider === "sqlite") {
+    client.db
+      .update(sqliteSchema.jobDescriptions)
+      .set(update)
+      .where(eq(sqliteSchema.jobDescriptions.id, id))
+      .run();
+  } else {
+    await client.db
+      .update(pgSchema.jobDescriptions)
+      .set(update)
+      .where(eq(pgSchema.jobDescriptions.id, id));
+  }
+}

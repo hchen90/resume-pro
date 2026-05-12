@@ -126,22 +126,23 @@ export default async function Home({
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {resumes.map((resume) => (
-              <Link
+              <article
                 key={resume.id}
-                href={`/resumes/${resume.id}?${query}`}
                 className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
               >
-                <div className="text-lg font-semibold">{resume.title}</div>
+                <Link href={`/resumes/${resume.id}?${query}`} className="block">
+                  <div className="text-lg font-semibold">{resume.title}</div>
+                </Link>
                 <div className="mt-8 flex items-center justify-between text-sm text-zinc-500">
-                  <span>
+                  <Link href={`/resumes/${resume.id}?${query}`}>
                     {t.templatePrefix}
                     {resume.templateId}
-                  </span>
+                  </Link>
                   <span>
                     {new Date(resume.updatedAt).toLocaleDateString(locale)}
                   </span>
                 </div>
-              </Link>
+              </article>
             ))}
           </div>
         )}

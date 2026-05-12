@@ -4,9 +4,9 @@ import {
   nodeItems,
   nonProfileNodes,
   profileNode,
-  splitLines,
 } from "@/lib/resume/format";
 
+import { MarkdownContent } from "./markdown-content";
 import type { ResumeTemplate, ResumeTemplateProps } from "./types";
 
 function CompactTemplate({ resume }: ResumeTemplateProps) {
@@ -64,20 +64,18 @@ function CompactTemplate({ resume }: ResumeTemplateProps) {
                           .join(" · ")}
                       </p>
                     </div>
-                    <div className="mt-1 space-y-1 leading-6">
-                      {splitLines(item.description).map((line) => (
-                        <p key={line}>{line}</p>
-                      ))}
-                    </div>
+                    <MarkdownContent
+                      value={item.description}
+                      className="mt-1 space-y-1 leading-6"
+                    />
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="space-y-1 text-sm leading-6 text-zinc-800">
-                {splitLines(node.content.body).map((line) => (
-                  <p key={line}>{line}</p>
-                ))}
-              </div>
+              <MarkdownContent
+                value={node.content.body}
+                className="space-y-1 text-sm leading-6 text-zinc-800"
+              />
             )}
           </section>
         ))}

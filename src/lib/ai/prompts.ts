@@ -16,6 +16,7 @@ export function systemPromptForMode(mode: AiMode, locale: Locale) {
 
 当前是编辑模式。你必须只返回 JSON，不要返回 Markdown。
 重要：update_node 的 content 只能包含用户要求修改的字段。不要把未修改字段补成空字符串、空数组或占位值。
+content.body 和 items[].description 支持 Markdown，可在适合时使用加粗、列表、链接等格式。
 JSON 格式：
 {
   "message": "给用户看的简短说明",
@@ -50,6 +51,8 @@ JSON 格式：
 
 当前是 Plan 模式。你必须只返回 JSON，不要返回 Markdown。
 只生成执行计划，不要生成 patch，不要声称已经修改简历。
+这个计划会展示给用户确认。用户可能只选择部分步骤执行，所以每个 step 必须尽量独立、可单独执行。
+每个 step 的 description 要说明影响范围、预期结果和必要的注意事项。
 每个 step 都要有稳定 id，例如 "step-1"、"step-2"。
 targetNodeIds 只填写当前简历上下文中真实存在且相关的节点 id，不确定则用空数组。
 JSON 格式：
@@ -88,11 +91,19 @@ ${input.resumeContext}`;
 export function approvedPlanExecutionPrompt(input: {
   originalMessage: string;
   planSummary: string;
-  steps: Array<{ title: string; description: string }>;
+  steps: Array<{
+    id: string;
+    title: string;
+    description: string;
+    targetNodeIds: string[];
+  }>;
   resumeContext: string;
 }) {
   const steps = input.steps
-    .map((step, index) => `${index + 1}. ${step.title}\n${step.description}`)
+    .map(
+      (step, index) =>
+        `${index + 1}. ${step.title}\nID: ${step.id}\nTarget node ids: ${step.targetNodeIds.join(", ") || "none"}\n${step.description}`,
+    )
     .join("\n\n");
 
   return `用户原始请求：
@@ -104,7 +115,7 @@ ${input.planSummary}
 确认的步骤：
 ${steps}
 
-请只执行这些已确认步骤，生成必要的结构化 patches。不要执行未列出的改动。
+请只执行这些已确认步骤，生成必要的结构化 patches。不要执行未列出的改动，不要顺手优化其他节点。
 
 当前简历上下文：
 ${input.resumeContext}`;

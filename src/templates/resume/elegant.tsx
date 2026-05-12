@@ -4,9 +4,9 @@ import {
   nodeItems,
   nonProfileNodes,
   profileNode,
-  splitLines,
 } from "@/lib/resume/format";
 
+import { MarkdownContent } from "./markdown-content";
 import type { ResumeTemplate, ResumeTemplateProps } from "./types";
 
 function ElegantTemplate({ resume }: ResumeTemplateProps) {
@@ -34,13 +34,11 @@ function ElegantTemplate({ resume }: ResumeTemplateProps) {
               <span className="h-px flex-1 bg-stone-300" />
             </h2>
             {node.type === "skills" ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm leading-7 text-stone-700">
                 {(node.content.skills ?? []).map((skill) => (
-                  <span
-                    key={skill}
-                    className="border border-stone-300 bg-white/60 px-3 py-1 text-sm text-stone-700"
-                  >
-                    {skill}
+                  <span key={skill} className="inline-flex items-center gap-3">
+                    <span>{skill}</span>
+                    <span className="text-stone-300 last:hidden">·</span>
                   </span>
                 ))}
               </div>
@@ -64,20 +62,18 @@ function ElegantTemplate({ resume }: ResumeTemplateProps) {
                         <p>{item.location}</p>
                       </div>
                     </div>
-                    <div className="mt-3 space-y-2 leading-7">
-                      {splitLines(item.description).map((line) => (
-                        <p key={line}>{line}</p>
-                      ))}
-                    </div>
+                    <MarkdownContent
+                      value={item.description}
+                      className="mt-3 space-y-2 leading-7"
+                    />
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="space-y-2 text-sm leading-7 text-stone-800">
-                {splitLines(node.content.body).map((line) => (
-                  <p key={line}>{line}</p>
-                ))}
-              </div>
+              <MarkdownContent
+                value={node.content.body}
+                className="space-y-2 text-sm leading-7 text-stone-800"
+              />
             )}
           </section>
         ))}

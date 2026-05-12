@@ -4,9 +4,9 @@ import {
   nodeItems,
   nonProfileNodes,
   profileNode,
-  splitLines,
 } from "@/lib/resume/format";
 
+import { MarkdownContent } from "./markdown-content";
 import type { ResumeTemplate, ResumeTemplateProps } from "./types";
 
 function CreativeTemplate({ resume }: ResumeTemplateProps) {
@@ -54,20 +54,18 @@ function CreativeTemplate({ resume }: ResumeTemplateProps) {
                           <p>{item.location}</p>
                         </div>
                       </div>
-                      <div className="mt-3 space-y-2 leading-7">
-                        {splitLines(item.description).map((line) => (
-                          <p key={line}>{line}</p>
-                        ))}
-                      </div>
+                      <MarkdownContent
+                        value={item.description}
+                        className="mt-3 space-y-2 leading-7"
+                      />
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 space-y-2 text-sm leading-7 text-zinc-700">
-                  {splitLines(node.content.body).map((line) => (
-                    <p key={line}>{line}</p>
-                  ))}
-                </div>
+                <MarkdownContent
+                  value={node.content.body}
+                  className="mt-4 space-y-2 text-sm leading-7 text-zinc-700"
+                />
               )}
             </section>
           ))}
@@ -78,14 +76,14 @@ function CreativeTemplate({ resume }: ResumeTemplateProps) {
             <h2 className="text-sm font-black uppercase tracking-[0.24em] text-indigo-600">
               {skills.title}
             </h2>
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-4 space-y-2">
               {(skills.content.skills ?? []).map((skill) => (
-                <span
+                <p
                   key={skill}
-                  className="rounded-xl bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700"
+                  className="border-b border-zinc-200 pb-2 text-sm font-medium text-zinc-700 last:border-b-0"
                 >
                   {skill}
-                </span>
+                </p>
               ))}
             </div>
           </aside>

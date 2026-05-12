@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { type DragEvent, useMemo, useState, useTransition } from "react";
 
 import { resumeTemplates } from "@/templates/resume/registry";
 import { dictionaries, type Locale } from "@/lib/i18n";
@@ -46,10 +46,16 @@ export function ResumeWorkspace({
   const [isPending, startTransition] = useTransition();
   const [isNodesCollapsed, setIsNodesCollapsed] = useState(false);
   const [isAiCollapsed, setIsAiCollapsed] = useState(false);
+  const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const selectedNode = useMemo(
     () => resume.nodes.find((node) => node.id === selectedNodeId) ?? resume.nodes[0],
     [resume.nodes, selectedNodeId],
+  );
+  const orderedNodes = useMemo(
+    () => resume.nodes.slice().sort((a, b) => a.sortOrder - b.sortOrder),
+    [resume.nodes],
   );
 
   function updateNode(updatedNode: ResumeNode) {
@@ -63,7 +69,13 @@ export function ResumeWorkspace({
   }
 
   function addNode(type: ResumeNodeType) {
-    const node = createNode(resume.id, type, defaultTitle(type, locale), resume.nodes.length);
+    const node = createNode(
+      resume.id,
+      type,
+      defaultTitle(type, locale),
+      resume.nodes.length,
+      locale,
+    );
     setResume((current) => ({
       ...current,
       nodes: [...current.nodes, node],
@@ -83,6 +95,46 @@ export function ResumeWorkspace({
       return { ...current, nodes };
     });
     setSaveState("idle");
+  }
+
+  function reorderNodes(sourceNodeId: string, targetNodeId: string) {
+    if (sourceNodeId === targetNodeId) {
+      return;
+    }
+
+    setResume((current) => {
+      const ordered = current.nodes
+        .slice()
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+      const sourceIndex = ordered.findIndex((node) => node.id === sourceNodeId);
+      const targetIndex = ordered.findIndex((node) => node.id === targetNodeId);
+
+      if (sourceIndex < 0 || targetIndex < 0) {
+        return current;
+      }
+
+      const [sourceNode] = ordered.splice(sourceIndex, 1);
+      ordered.splice(targetIndex, 0, sourceNode);
+
+      return {
+        ...current,
+        nodes: ordered.map((node, index) => ({
+          ...node,
+          sortOrder: index,
+        })),
+      };
+    });
+    setSaveState("idle");
+  }
+
+  function handleNodeDrop(event: DragEvent, targetNodeId: string) {
+    event.preventDefault();
+
+    if (draggedNodeId) {
+      reorderNodes(draggedNodeId, targetNodeId);
+    }
+
+    setDraggedNodeId(null);
   }
 
   function saveResume() {
@@ -109,6 +161,29 @@ export function ResumeWorkspace({
         setSaveState("error");
       }
     });
+  }
+
+  async function deleteCurrentResume() {
+    if (isDeleting || !window.confirm(t.deleteResumeConfirm)) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/resumes/${resume.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      window.location.href = `/?${settingsQuery({ lang: locale, style: uiStyle })}`;
+    } catch {
+      setSaveState("error");
+      setIsDeleting(false);
+    }
   }
 
   return (
@@ -150,24 +225,21 @@ export function ResumeWorkspace({
               </svg>
             </Link>
             <div className="mt-2 flex w-full flex-col items-center gap-2">
-              {resume.nodes
-                .slice()
-                .sort((a, b) => a.sortOrder - b.sortOrder)
-                .map((node) => (
-                  <button
-                    type="button"
-                    key={node.id}
-                    onClick={() => setSelectedNodeId(node.id)}
-                    className={`flex h-10 w-10 items-center justify-center rounded-lg text-xs font-semibold transition ${
-                      selectedNode?.id === node.id
-                        ? "bg-[var(--app-accent-soft)] text-[var(--app-accent)] ring-1 ring-[var(--app-accent-border)]"
-                        : "bg-[var(--app-muted-surface)] text-[var(--app-muted)] hover:bg-[var(--app-accent-soft)]"
-                    }`}
-                    title={node.title}
-                  >
-                    {node.title.slice(0, 1).toUpperCase()}
-                  </button>
-                ))}
+              {orderedNodes.map((node) => (
+                <button
+                  type="button"
+                  key={node.id}
+                  onClick={() => setSelectedNodeId(node.id)}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg text-xs font-semibold transition ${
+                    selectedNode?.id === node.id
+                      ? "bg-[var(--app-accent-soft)] text-[var(--app-accent)] ring-1 ring-[var(--app-accent-border)]"
+                      : "bg-[var(--app-muted-surface)] text-[var(--app-muted)] hover:bg-[var(--app-accent-soft)]"
+                  }`}
+                  title={node.title}
+                >
+                  {node.title.slice(0, 1).toUpperCase()}
+                </button>
+              ))}
             </div>
           </>
         ) : (
@@ -220,26 +292,52 @@ export function ResumeWorkspace({
               <p className="px-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--app-muted)]">
                 {t.nodesPanel}
               </p>
-              {resume.nodes
-                .slice()
-                .sort((a, b) => a.sortOrder - b.sortOrder)
-                .map((node) => (
+              <p className="px-1 text-xs text-[var(--app-muted)]">
+                {t.reorderNodesHelp}
+              </p>
+              {orderedNodes.map((node) => (
+                <div
+                  key={node.id}
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "move";
+                    event.dataTransfer.setData("text/plain", node.id);
+                    setDraggedNodeId(node.id);
+                  }}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => handleNodeDrop(event, node.id)}
+                  onDragEnd={() => setDraggedNodeId(null)}
+                  className={`rounded-lg transition ${
+                    draggedNodeId === node.id ? "opacity-50" : ""
+                  }`}
+                >
                   <button
                     type="button"
-                    key={node.id}
                     onClick={() => setSelectedNodeId(node.id)}
-                    className={`w-full rounded-lg px-4 py-3 text-left text-sm transition ${
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm transition ${
                       selectedNode?.id === node.id
                         ? "bg-[var(--app-accent-soft)] text-[var(--app-accent)] ring-1 ring-[var(--app-accent-border)]"
                         : "bg-[var(--app-muted-surface)] text-[var(--app-muted)] hover:bg-[var(--app-accent-soft)]"
                     }`}
                   >
-                    <span className="block font-medium">{node.title}</span>
-                    <span className="text-xs opacity-70">
-                      {t.nodeTitles[node.type]}
+                    <span
+                      className="flex h-8 w-5 shrink-0 cursor-grab items-center justify-center text-[var(--app-muted)] active:cursor-grabbing"
+                      title={t.dragNode}
+                      aria-label={t.dragNode}
+                    >
+                      <DragHandleIcon />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">
+                        {node.title}
+                      </span>
+                      <span className="text-xs opacity-70">
+                        {t.nodeTitles[node.type]}
+                      </span>
                     </span>
                   </button>
-                ))}
+                </div>
+              ))}
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-2">
@@ -258,7 +356,7 @@ export function ResumeWorkspace({
             <button
               type="button"
               onClick={saveResume}
-              disabled={isPending}
+              disabled={isPending || isDeleting}
               className="mt-6 w-full rounded-lg bg-[var(--app-primary)] px-4 py-3 font-semibold text-white transition hover:bg-[var(--app-primary-hover)] disabled:opacity-60"
             >
               {isPending ? t.saving : t.save}
@@ -269,6 +367,14 @@ export function ResumeWorkspace({
             >
               {t.downloadPrint}
             </Link>
+            <button
+              type="button"
+              onClick={() => void deleteCurrentResume()}
+              disabled={isDeleting}
+              className="mt-3 w-full rounded-lg border border-red-200 px-4 py-3 font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {t.deleteResume}
+            </button>
             {saveState === "saved" ? (
               <p className="mt-3 text-center text-sm text-emerald-600">
                 {t.saved}
@@ -292,6 +398,7 @@ export function ResumeWorkspace({
               labels={{
                 sectionTitle: t.sectionTitle,
                 content: t.content,
+                markdownHelp: t.markdownHelp,
                 addItem: t.addItem,
                 deleteItem: t.deleteItem,
                 itemTitle: t.itemTitle,
@@ -396,6 +503,19 @@ function PanelIcon({ direction }: { direction: "left" | "right" }) {
             : "M5.22 3.47a.75.75 0 0 1 1.06 0L10.81 8l-4.53 4.53a.75.75 0 1 1-1.06-1.06L8.69 8 5.22 4.53a.75.75 0 0 1 0-1.06Z"
         }
       />
+    </svg>
+  );
+}
+
+function DragHandleIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      className="h-4 w-4"
+      fill="currentColor"
+    >
+      <path d="M5 3.25A1.25 1.25 0 1 1 2.5 3.25 1.25 1.25 0 0 1 5 3.25Zm0 4.75A1.25 1.25 0 1 1 2.5 8 1.25 1.25 0 0 1 5 8Zm-1.25 6A1.25 1.25 0 1 0 3.75 11.5 1.25 1.25 0 0 0 3.75 14ZM13.5 3.25A1.25 1.25 0 1 1 11 3.25a1.25 1.25 0 0 1 2.5 0ZM12.25 9.25A1.25 1.25 0 1 0 12.25 6.75a1.25 1.25 0 0 0 0 2.5Zm1.25 3.5A1.25 1.25 0 1 1 11 12.75a1.25 1.25 0 0 1 2.5 0Z" />
     </svg>
   );
 }

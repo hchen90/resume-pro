@@ -3,6 +3,7 @@ import "server-only";
 import { desc, eq } from "drizzle-orm";
 
 import { createDefaultResumeNodes } from "@/lib/resume/defaults";
+import { defaultLocale, type Locale } from "@/lib/i18n";
 import type {
   Resume,
   ResumeNode,
@@ -100,7 +101,10 @@ export async function getResume(id: string): Promise<ResumeWithNodes | null> {
   return toResumeWithNodes(resume, nodes);
 }
 
-export async function createResume(title = "我的简历") {
+export async function createResume(
+  title = "我的简历",
+  locale: Locale = defaultLocale,
+) {
   await ensureDatabase();
   const client = getDbClient();
   const timestamp = new Date().toISOString();
@@ -111,7 +115,7 @@ export async function createResume(title = "我的简历") {
     createdAt: timestamp,
     updatedAt: timestamp,
   };
-  const nodes = createDefaultResumeNodes(resume.id);
+  const nodes = createDefaultResumeNodes(resume.id, locale);
 
   if (client.provider === "sqlite") {
     client.db.insert(sqliteSchema.resumes).values(resume).run();
@@ -127,6 +131,17 @@ export async function createResume(title = "我的简历") {
   }
 
   return resume.id;
+}
+
+export async function deleteResume(id: string) {
+  await ensureDatabase();
+  const client = getDbClient();
+
+  if (client.provider === "sqlite") {
+    client.db.delete(sqliteSchema.resumes).where(eq(sqliteSchema.resumes.id, id)).run();
+  } else {
+    await client.db.delete(pgSchema.resumes).where(eq(pgSchema.resumes.id, id));
+  }
 }
 
 export async function saveResume(

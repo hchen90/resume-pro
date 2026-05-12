@@ -100,15 +100,19 @@ export default async function JobMatchPage({
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {jobDescriptions.slice(0, 4).map((jobDescription) => (
-              <article
+              <Link
                 key={jobDescription.id}
+                href={`/tools/job-match/${jobDescription.id}?${query}`}
                 className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-sm"
               >
                 <h3 className="font-semibold">{jobDescription.title}</h3>
                 <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--app-muted)]">
                   {jobDescription.content}
                 </p>
-              </article>
+                <span className="mt-4 inline-flex rounded-lg bg-[var(--app-accent-soft)] px-3 py-2 text-xs font-semibold text-[var(--app-accent)] ring-1 ring-[var(--app-accent-border)]">
+                  {t.editJd}
+                </span>
+              </Link>
             ))}
           </div>
         )}
