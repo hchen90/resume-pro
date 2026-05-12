@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createResumeAction } from "@/app/actions";
 import { SystemSettings } from "@/components/system-settings";
 import { listResumes } from "@/lib/db/resume-repository";
+import { isElectronRuntime, readElectronAiConfig } from "@/lib/electron-env";
 import { dictionaries, resolveLocale } from "@/lib/i18n";
 import { getCurrentVersion } from "@/lib/release-notes";
 import {
@@ -33,6 +34,9 @@ export default async function Home({
   const resumes = await listResumes();
   const currentVersion = getCurrentVersion();
   const query = settingsQuery({ lang: locale, style: uiStyle });
+  const electronAiConfig = isElectronRuntime()
+    ? readElectronAiConfig()
+    : undefined;
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-6 py-10">
@@ -49,11 +53,20 @@ export default async function Home({
         <SystemSettings
           currentLocale={locale}
           currentUiStyle={uiStyle}
+          electronAiConfig={electronAiConfig}
           labels={{
             settings: t.settings,
             language: t.language,
             interfaceStyle: t.interfaceStyle,
             uiStyles: t.uiStyles,
+            aiSettings: t.aiSettings,
+            aiApiUrl: t.aiApiUrl,
+            aiApiKey: t.aiApiKey,
+            aiApiModel: t.aiApiModel,
+            saveAiSettings: t.saveAiSettings,
+            aiSettingsSaved: t.aiSettingsSaved,
+            aiSettingsRestartRequired: t.aiSettingsRestartRequired,
+            aiSettingsSaveFailed: t.aiSettingsSaveFailed,
           }}
         />
       </div>

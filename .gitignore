@@ -16,9 +16,12 @@
 # next.js
 /.next/
 /out/
+/public/release-notes.json
 
 # production
 /build
+/dist
+/dist-electron
 
 # misc
 .DS_Store

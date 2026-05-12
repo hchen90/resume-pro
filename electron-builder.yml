@@ -1,0 +1,21 @@
+appId: com.resumepro.desktop
+productName: Resume Pro
+asar: false
+directories:
+  output: dist
+files:
+  - package.json
+  - dist-electron/**
+  - .next/standalone/**
+  - .next/static/**
+  - public/**
+mac:
+  target:
+    - dmg
+win:
+  target:
+    - nsis
+linux:
+  target:
+    - AppImage
+publish: null

@@ -2,6 +2,8 @@
 .next
 coverage
 data
+dist
+dist-electron
 node_modules
 npm-debug.log*
 Dockerfile

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { languageName, type Locale, locales } from "@/lib/i18n";
 import {
   localeCookieName,
@@ -8,14 +10,29 @@ import {
   uiStyles,
 } from "@/lib/settings";
 
+type ElectronAiConfig = {
+  aiApiUrl: string;
+  aiApiKey: string;
+  aiApiModel: string;
+};
+
 type SystemSettingsProps = {
   currentLocale: Locale;
   currentUiStyle: UiStyle;
+  electronAiConfig?: ElectronAiConfig;
   labels: {
     settings: string;
     language: string;
     interfaceStyle: string;
     uiStyles: Record<UiStyle, string>;
+    aiSettings: string;
+    aiApiUrl: string;
+    aiApiKey: string;
+    aiApiModel: string;
+    saveAiSettings: string;
+    aiSettingsSaved: string;
+    aiSettingsRestartRequired: string;
+    aiSettingsSaveFailed: string;
   };
 };
 
@@ -24,8 +41,20 @@ const cookieMaxAge = 60 * 60 * 24 * 365;
 export function SystemSettings({
   currentLocale,
   currentUiStyle,
+  electronAiConfig,
   labels,
 }: SystemSettingsProps) {
+  const [aiConfig, setAiConfig] = useState(
+    electronAiConfig ?? {
+      aiApiUrl: "",
+      aiApiKey: "",
+      aiApiModel: "",
+    },
+  );
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">(
+    "idle",
+  );
+
   function updateSettings(next: { locale?: Locale; uiStyle?: UiStyle }) {
     const locale = next.locale ?? currentLocale;
     const uiStyle = next.uiStyle ?? currentUiStyle;
@@ -37,6 +66,26 @@ export function SystemSettings({
     document.cookie = `${uiStyleCookieName}=${uiStyle}; path=/; max-age=${cookieMaxAge}; SameSite=Lax`;
     document.documentElement.dataset.uiStyle = uiStyle;
     window.location.href = url.toString();
+  }
+
+  async function saveAiSettings() {
+    setSaveState("saving");
+
+    try {
+      const response = await fetch("/api/settings/ai", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiConfig),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
   }
 
   return (
@@ -92,6 +141,74 @@ export function SystemSettings({
             ))}
           </select>
         </label>
+
+        {electronAiConfig ? (
+          <div className="mt-4 border-t border-[var(--app-border)] pt-4">
+            <p className="text-xs font-semibold text-[var(--app-muted)]">
+              {labels.aiSettings}
+            </p>
+            <label className="mt-3 block text-xs font-medium text-[var(--app-muted)]">
+              {labels.aiApiUrl}
+              <input
+                value={aiConfig.aiApiUrl}
+                onChange={(event) =>
+                  setAiConfig((current) => ({
+                    ...current,
+                    aiApiUrl: event.target.value,
+                  }))
+                }
+                className="mt-2 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-muted-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
+              />
+            </label>
+            <label className="mt-3 block text-xs font-medium text-[var(--app-muted)]">
+              {labels.aiApiKey}
+              <input
+                type="password"
+                value={aiConfig.aiApiKey}
+                onChange={(event) =>
+                  setAiConfig((current) => ({
+                    ...current,
+                    aiApiKey: event.target.value,
+                  }))
+                }
+                className="mt-2 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-muted-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
+              />
+            </label>
+            <label className="mt-3 block text-xs font-medium text-[var(--app-muted)]">
+              {labels.aiApiModel}
+              <input
+                value={aiConfig.aiApiModel}
+                onChange={(event) =>
+                  setAiConfig((current) => ({
+                    ...current,
+                    aiApiModel: event.target.value,
+                  }))
+                }
+                className="mt-2 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-muted-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={() => void saveAiSettings()}
+              disabled={saveState === "saving"}
+              className="mt-3 w-full rounded-md bg-[var(--app-primary)] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[var(--app-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {labels.saveAiSettings}
+            </button>
+
+            {saveState === "saved" ? (
+              <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                {labels.aiSettingsSaved} {labels.aiSettingsRestartRequired}
+              </p>
+            ) : null}
+            {saveState === "error" ? (
+              <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700">
+                {labels.aiSettingsSaveFailed}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </details>
   );

@@ -2,9 +2,16 @@
   "name": "resume-pro",
   "version": "0.1.0",
   "private": true,
+  "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "dev:electron": "concurrently -k -s first -n next,electron \"next dev -p 3000\" \"wait-on http://localhost:3000 && npm run electron:dev\"",
+    "release-notes:generate": "node scripts/generate-release-notes.mjs",
+    "build": "npm run release-notes:generate && next build",
+    "build:electron-main": "esbuild electron/main.ts electron/preload.ts --bundle --platform=node --format=cjs --target=node22 --outdir=dist-electron --out-extension:.js=.cjs --external:electron",
+    "build:electron": "npm run build && npm run build:electron-main && node scripts/run-electron-builder.mjs",
+    "pack:electron": "npm run build && npm run build:electron-main && node scripts/run-electron-builder.mjs --dir",
+    "electron:dev": "npm run build:electron-main && cross-env ELECTRON_RUN_AS_NODE= ELECTRON_RENDERER_URL=http://localhost:3000 electron .",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -33,11 +40,17 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.10",
+    "electron": "^39.8.10",
+    "electron-builder": "^26.8.1",
+    "esbuild": "^0.28.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "wait-on": "^9.0.10"
   }
 }
