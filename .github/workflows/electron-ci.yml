@@ -3,7 +3,7 @@ name: Electron CI
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v[0-9]+.[0-9]+"
 
 env:
   CSC_IDENTITY_AUTO_DISCOVERY: false

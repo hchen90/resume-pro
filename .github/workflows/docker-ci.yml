@@ -3,7 +3,7 @@ name: Docker CI
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v[0-9]+.[0-9]+"
 
 env:
   # Override via repo/org Variables: Settings → Secrets and variables → Actions → Variables
