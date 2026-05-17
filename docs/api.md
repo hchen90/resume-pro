@@ -1,52 +1,52 @@
 # HTTP API
 
-所有 API Route 使用 `export const runtime = "nodejs"`，以便访问 SQLite / 文件系统。
+All API routes use `export const runtime = "nodejs"` so they can access SQLite and the filesystem.
 
-## 简历
+## Resumes
 
 ### `PATCH /api/resumes/[id]`
 
-保存整份简历（标题、模板、全部节点）。
+Save a full resume (title, template, all nodes).
 
-- **Body**：`ResumeSaveInput`（Zod：`resumeSaveSchema`）
-- **Response**：`ResumeWithNodes`
+- **Body**: `ResumeSaveInput` (Zod: `resumeSaveSchema`)
+- **Response**: `ResumeWithNodes`
 
 ### `DELETE /api/resumes/[id]`
 
-删除简历（节点级联删除）。
+Delete a resume (nodes cascade).
 
-- **Response**：`{ ok: true }`
+- **Response**: `{ ok: true }`
 
 ## AI
 
 ### `POST /api/ai`
 
-简历 AI 助手，详见 [ai.md](./ai.md)。
+Resume AI assistant. See [ai.md](./ai.md).
 
-- **Body**：`resumeId`、`mode`、`message`、`action?`、`plan?`、`locale?`、`selectedNodeId?`
-- **Response**：`message`、`patches`、可选 `plan`、`resume`
-- **Errors**：404 简历不存在；400 Plan 执行缺少 plan
+- **Body**: `resumeId`, `mode`, `message`, optional `action`, `plan`, `locale`, `selectedNodeId`
+- **Response**: `message`, `patches`, optional `plan`, `resume`
+- **Errors**: 404 if resume missing; 400 if plan execute lacks `plan`
 
-## 岗位匹配
+## Job fit
 
 ### `POST /api/job-match`
 
-JD 与简历契合度评分，详见 [job-match.md](./job-match.md)。
+Score resume against a JD. See [job-match.md](./job-match.md).
 
-- **Body**：`jobDescriptionId`、`resumeId`、`locale?`
-- **Response**：`{ result: { score, summary, strengths, gaps, suggestions } }`
+- **Body**: `jobDescriptionId`, `resumeId`, optional `locale`
+- **Response**: `{ result: { score, summary, strengths, gaps, suggestions } }`
 
-## 设置（Electron）
+## Settings (Electron)
 
 ### `POST /api/settings/ai`
 
-仅在 Electron 运行时有效，更新 `~/.resume-pro/.env` 中的 AI 变量。
+Electron only. Updates AI variables in `~/.resume-pro/.env`.
 
-- **Body**：`aiApiUrl`、`aiApiKey`、`aiApiModel`
-- 修改后通常需重启应用使主进程重新加载环境
+- **Body**: `aiApiUrl`, `aiApiKey`, `aiApiModel`
+- Restart is usually required for the main process to reload env
 
-实现：`src/app/api/settings/ai/route.ts`（调用 `updateElectronAiConfig`）。
+Implementation: `src/app/api/settings/ai/route.ts` → `updateElectronAiConfig`.
 
-## 错误与未配置 AI
+## Missing AI configuration
 
-当 `AI_API_KEY` 缺失时，`/api/ai` 与 `/api/job-match` 返回 200 + 本地化 `message`（非 5xx），前端据此提示用户配置 AI。
+When `AI_API_KEY` is unset, `/api/ai` and `/api/job-match` return **200** with a localized `message` (not 5xx). The UI prompts the user to configure AI.

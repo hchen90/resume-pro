@@ -1,24 +1,24 @@
-# 发布说明模块
+# Release Notes
 
-## 职责
+## Responsibilities
 
-在构建时生成版本发布说明 JSON，供站内 `/release-notes` 页面展示；首页显示当前版本号。
+Generate versioned release notes JSON at build time for `/release-notes` pages; show current version on the home page.
 
-## 关键文件
+## Key files
 
-| 路径 | 说明 |
-|------|------|
-| `scripts/generate-release-notes.mjs` | 从 Git 标签/提交生成 `public/release-notes.json` |
-| `src/lib/release-notes.ts` | 读取 JSON、`getCurrentVersion()` |
-| `src/app/release-notes/page.tsx` | 版本列表 |
-| `src/app/release-notes/[version]/page.tsx` | 单版本详情 |
+| Path | Description |
+|------|-------------|
+| `scripts/generate-release-notes.mjs` | Builds `public/release-notes.json` from Git tags/commits |
+| `src/lib/release-notes.ts` | Read JSON, `getCurrentVersion()` |
+| `src/app/release-notes/page.tsx` | Version list |
+| `src/app/release-notes/[version]/page.tsx` | Single version detail |
 
-## 构建集成
+## Build integration
 
-`npm run build` 会先执行 `release-notes:generate`，再 `next build`。
+`npm run build` runs `release-notes:generate` before `next build`.
 
-Electron 生产环境通过 `RELEASE_NOTES_PATH` 指向打包内的 `public/release-notes.json`（见 `electron/main.ts`）。
+In Electron production, `RELEASE_NOTES_PATH` points at the bundled `public/release-notes.json` (see `electron/main.ts`).
 
-## 环境变量
+## Environment
 
-- `RELEASE_NOTES_PATH` — 可选，覆盖默认 `public/release-notes.json` 路径
+- `RELEASE_NOTES_PATH` — optional override for `public/release-notes.json`

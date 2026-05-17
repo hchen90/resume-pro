@@ -1,58 +1,58 @@
-# Electron 桌面端
+# Electron Desktop
 
-## 职责
+## Responsibilities
 
-将 Next.js 应用包装为桌面程序：开发时加载 `localhost:3000`；生产环境启动内置 standalone 服务器并在 BrowserWindow 中展示。
+Wrap the Next.js app as a desktop app: development loads `localhost:3000`; production starts the bundled standalone server inside a `BrowserWindow`.
 
-## 关键文件
+## Key files
 
-| 路径 | 说明 |
-|------|------|
-| `electron/main.ts` | 主进程：窗口、生产 Next 启动、环境文件 |
-| `electron/preload.ts` | Preload 脚本（contextIsolation） |
-| `electron-builder.yml` | 打包配置 |
-| `scripts/run-electron-builder.mjs` | 调用 electron-builder |
-| `src/lib/electron-env.ts` | 检测 Electron、读写 `~/.resume-pro/.env` |
-| `dist-electron/` | esbuild 输出的 main/preload CJS |
+| Path | Description |
+|------|-------------|
+| `electron/main.ts` | Main process: window, prod Next bootstrap, env file |
+| `electron/preload.ts` | Preload script (`contextIsolation`) |
+| `electron-builder.yml` | Packaging config |
+| `scripts/run-electron-builder.mjs` | Invokes electron-builder |
+| `src/lib/electron-env.ts` | Detect Electron; read/write `~/.resume-pro/.env` |
+| `dist-electron/` | esbuild output for main/preload CJS |
 
-## 开发与构建命令
+## Commands
 
-| 命令 | 说明 |
-|------|------|
-| `npm run dev:electron` | 并行启动 Next（3000）与 Electron |
-| `npm run build:electron` | 构建 Next standalone + 打包安装包 |
-| `npm run pack:electron` | 未打包目录，便于本地检查 |
+| Command | Description |
+|---------|-------------|
+| `npm run dev:electron` | Next on :3000 + Electron |
+| `npm run build:electron` | Next standalone + installer build |
+| `npm run pack:electron` | Unpacked dir for local inspection |
 
-`package.json` 的 `main` 指向 `dist-electron/main.cjs`。
+`package.json` `main` points to `dist-electron/main.cjs`.
 
-## 运行时配置
+## Runtime config
 
-首次启动在 `~/.resume-pro/.env` 生成默认配置（`main.ts` / `electron-env.ts`）：
+First launch creates `~/.resume-pro/.env` (`main.ts` / `electron-env.ts`):
 
 - `DATABASE_PROVIDER=sqlite`
 - `SQLITE_PATH=~/.resume-pro/resume-pro.sqlite`
-- `AI_API_*` 占位
+- `AI_API_*` placeholders
 - `APP_TARGET=electron`
 
-用户可在应用内 **系统设置** 修改 AI 配置（需重启生效，文案见 i18n `aiSettingsRestartRequired`）。
+Users can change AI settings in-app (**System settings**); restart is required (`aiSettingsRestartRequired` in i18n).
 
-## 生产启动流程
+## Production startup
 
-1. `startProductionNextServer()` 分配本地端口，设置 `HOSTNAME`、`PORT`、`SQLITE_PATH` 等。
-2. `createRequire` 加载 `.next/standalone/server.js`。
-3. 轮询 HTTP 直至服务就绪，再 `loadURL` 到 BrowserWindow。
+1. `startProductionNextServer()` picks a free port and sets `HOSTNAME`, `PORT`, `SQLITE_PATH`, etc.
+2. `createRequire` loads `.next/standalone/server.js`.
+3. Poll HTTP until ready, then `loadURL` in `BrowserWindow`.
 
-## 安全策略
+## Security
 
-- `contextIsolation: true`，`nodeIntegration: false`
-- 外部链接 `shell.openExternal`，阻止窗口内跨域导航
+- `contextIsolation: true`, `nodeIntegration: false`
+- External links via `shell.openExternal`; block in-window cross-origin navigation
 
-## 与 Web 部署的差异
+## Web vs Electron
 
-| 项 | Web | Electron |
-|----|-----|----------|
-| 数据库路径 | 项目 `./data/` | 用户目录 `~/.resume-pro/` |
-| AI 配置 | 项目 `.env` | `~/.resume-pro/.env` + UI 写入 |
-| `isElectronRuntime()` | false | true（`APP_TARGET` / `ELECTRON`） |
+| Item | Web | Electron |
+|------|-----|----------|
+| DB path | `./data/` in project | `~/.resume-pro/` |
+| AI config | project `.env` | `~/.resume-pro/.env` + UI writer |
+| `isElectronRuntime()` | false | true (`APP_TARGET` / `ELECTRON`) |
 
-`next.config.ts` 的 `output: "standalone"` 为 Electron 生产包所必需。
+`next.config.ts` `output: "standalone"` is required for the Electron production bundle.

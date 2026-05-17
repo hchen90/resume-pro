@@ -1,67 +1,67 @@
-# Resume Pro — Agent 指引
+# Resume Pro — Agent Guide
 
-面向在本仓库中工作的 AI Agent 与开发者。
+For AI agents and developers working in this repository.
 
-## 项目简介
+## Overview
 
-本地优先的 AI 简历编辑器（Next.js 16 + React 19 + Drizzle + SQLite/Postgres + LangChain + Electron）。功能包括结构化简历编辑、多模板预览、AI 优化（Chat / Edit / Plan）、岗位 JD 契合度评分。
+Local-first AI resume editor (Next.js 16 + React 19 + Drizzle + SQLite/Postgres + LangChain + Electron). Features: structured resume editing, multi-template preview, AI optimization (Chat / Edit / Plan), and job-description fit scoring.
 
-## 文档（优先阅读）
+## Documentation (read first)
 
-模块说明已拆分到 [`docs/`](./docs/) 目录：
+Module docs live under [`docs/`](./docs/):
 
-| 文档 | 内容 |
-|------|------|
-| [docs/README.md](./docs/README.md) | 文档索引 |
-| [docs/overview.md](./docs/overview.md) | 技术栈、目录结构、数据流 |
-| [docs/database.md](./docs/database.md) | 数据库与 Repository |
-| [docs/resume.md](./docs/resume.md) | 简历类型、节点、Patch |
-| [docs/templates.md](./docs/templates.md) | 简历模板 |
-| [docs/ai.md](./docs/ai.md) | AI 模式与 API |
-| [docs/job-match.md](./docs/job-match.md) | 岗位契合度工具 |
-| [docs/frontend.md](./docs/frontend.md) | 页面与组件 |
+| Document | Topics |
+|----------|--------|
+| [docs/README.md](./docs/README.md) | Documentation index |
+| [docs/overview.md](./docs/overview.md) | Tech stack, layout, data flow |
+| [docs/database.md](./docs/database.md) | Database and repositories |
+| [docs/resume.md](./docs/resume.md) | Resume types, nodes, patches |
+| [docs/templates.md](./docs/templates.md) | Resume templates |
+| [docs/ai.md](./docs/ai.md) | AI modes and API |
+| [docs/job-match.md](./docs/job-match.md) | Job fit tool |
+| [docs/frontend.md](./docs/frontend.md) | Pages and components |
 | [docs/api.md](./docs/api.md) | HTTP API |
-| [docs/i18n-and-settings.md](./docs/i18n-and-settings.md) | 多语言与主题 |
-| [docs/electron.md](./docs/electron.md) | 桌面端 |
-| [docs/release-notes.md](./docs/release-notes.md) | 发布说明 |
+| [docs/i18n-and-settings.md](./docs/i18n-and-settings.md) | Locales and themes |
+| [docs/electron.md](./docs/electron.md) | Desktop app |
+| [docs/release-notes.md](./docs/release-notes.md) | Release notes |
 
-修改某模块前，先打开对应文档了解边界与关键路径。
+Open the relevant doc before changing a module to learn boundaries and key paths.
 
-## 代码布局（速查）
+## Code layout (quick reference)
 
 ```
-src/app/           # 页面、API Routes、Server Actions
-src/components/    # UI（resume/、job-match/、system-settings）
-src/lib/           # db、resume、ai、i18n、settings、electron-env
-src/templates/     # 简历 HTML 模板
-electron/          # 主进程
-drizzle/           # ORM 迁移文件
+src/app/           # Pages, API routes, server actions
+src/components/    # UI (resume/, job-match/, system-settings)
+src/lib/           # db, resume, ai, i18n, settings, electron-env
+src/templates/     # Resume HTML templates
+electron/          # Main process
+drizzle/           # ORM migrations
 ```
 
-## 开发约定
+## Conventions
 
-- **数据库**：默认 SQLite；`ensureDatabase()` 在首次 Repository 调用时建表。勿在客户端引用 `server-only` 模块。
-- **保存简历**：`saveResume` 全量替换节点；PATCH 需提交完整 `nodes` 数组。
-- **AI**：依赖 `AI_API_KEY`；未配置时 API 返回友好提示，不抛 500。Edit/Plan 执行路径必须解析 JSON patch（见 `src/lib/ai/patch.ts`）。
-- **i18n**：新增 UI 文案需同步 `src/lib/i18n.ts` 中所有 `dictionaries` 语言项。
-- **链接**：站内跳转携带 `settingsQuery({ lang, style })` 以保持语言与主题。
-- **测试**：`npm run test`（Vitest）；改 patch/registry 时补充测试。
+- **Database**: SQLite by default; `ensureDatabase()` runs on first repository call. Do not import `server-only` modules from the client.
+- **Saving resumes**: `saveResume` replaces all nodes; PATCH must send the full `nodes` array.
+- **AI**: Requires `AI_API_KEY`; when missing, APIs return a friendly message (not 500). Edit/Plan paths must parse JSON patches (`src/lib/ai/patch.ts`).
+- **i18n**: New UI strings must be added to every locale in `dictionaries` in `src/lib/i18n.ts`.
+- **Links**: Internal navigation should include `settingsQuery({ lang, style })` to preserve locale and theme.
+- **Tests**: `npm run test` (Vitest); extend tests when changing patch or registry logic.
 
-## 常用命令
+## Common commands
 
 ```bash
-npm run dev              # Web 开发
-npm run dev:electron     # 桌面开发
-npm run build            # 生产构建（含 release notes）
+npm run dev              # Web development
+npm run dev:electron     # Desktop development
+npm run build            # Production build (includes release notes)
 npm run lint && npm run typecheck && npm run test
-npm run db:generate      # Drizzle 迁移生成
-npm run db:push          # 推送 schema
+npm run db:generate      # Generate Drizzle migrations
+npm run db:push          # Push schema to database
 ```
 
-环境变量见 `.env.example` 与 [README.md](./README.md)。
+Environment variables: `.env.example` and [README.md](./README.md).
 
 <!-- BEGIN:nextjs-agent-rules -->
-## Next.js 注意
+## Next.js note
 
-**This is NOT the Next.js you know.** 本仓库使用的 Next.js 16 与常见训练数据中的 API/约定可能不同。写路由、数据获取或配置前，请阅读 `node_modules/next/dist/docs/` 中相关指南，并遵守其中的弃用说明。
+**This is NOT the Next.js you know.** This repo uses Next.js 16; APIs and conventions may differ from common training data. Before changing routes, data fetching, or config, read the relevant guides under `node_modules/next/dist/docs/` and follow deprecation notices.
 <!-- END:nextjs-agent-rules -->
