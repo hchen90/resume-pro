@@ -91,3 +91,62 @@ jobs:
             dist/*.blockmap
             dist/*.yml
             dist/*.yaml
+
+  release:
+    name: Publish GitHub Release
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download macOS package
+        uses: actions/download-artifact@v4
+        with:
+          name: resume-pro-electron-macOS
+          path: release-assets/macos
+
+      - name: Download Windows package
+        uses: actions/download-artifact@v4
+        with:
+          name: resume-pro-electron-Windows
+          path: release-assets/windows
+
+      - name: Download Linux package
+        uses: actions/download-artifact@v4
+        with:
+          name: resume-pro-electron-Linux
+          path: release-assets/linux
+
+      - name: Collect installers
+        run: |
+          mkdir -p release-upload
+          find release-assets -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.AppImage' \) -exec cp {} release-upload/ \;
+          ls -la release-upload/
+
+      - name: Generate release notes
+        run: node scripts/generate-release-notes.mjs
+
+      - name: Format release body
+        run: node scripts/format-github-release-body.mjs
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body_path: release-body.md
+          draft: false
+          prerelease: false
+          files: release-upload/*
+          fail_on_unmatched_files: true
