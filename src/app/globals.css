@@ -94,6 +94,11 @@ html[data-ui-style="slate"] {
   --resume-font-family: var(--font-resume-mono);
 }
 
+/* Mono glyphs are wider; give Academic-style label columns more room */
+.resume-document[data-resume-font="mono"] :where([class~="w-[168px]"]) {
+  width: 12.5rem !important;
+}
+
 /* Download/print page: keep resume layout identical to editor preview width */
 .print-page .resume-document {
   display: block;
@@ -188,13 +193,29 @@ textarea {
     page-break-inside: avoid;
   }
 
-  /* Preserve flex/grid used by resume templates in print */
-  .print-page .resume-document :where([class*="flex"]) {
+  /*
+   * Restore layout utilities in print. Use class-token selectors only:
+   * [class*="flex"] wrongly matches flex-1 / inline-flex and breaks two-column CV rows.
+   */
+  .print-page .resume-document :where([class~="flex"]) {
     display: flex !important;
   }
 
-  .print-page .resume-document :where([class*="grid"]) {
+  .print-page .resume-document :where([class~="inline-flex"]) {
+    display: inline-flex !important;
+  }
+
+  .print-page .resume-document :where([class~="grid"]) {
     display: grid !important;
+  }
+
+  .print-page .resume-document :where([class~="flex-1"]) {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+  }
+
+  .print-page .resume-document :where([class~="shrink-0"]) {
+    flex-shrink: 0 !important;
   }
 
   .print-page .resume-document > article {
