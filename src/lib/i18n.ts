@@ -176,6 +176,8 @@ export const dictionaries = {
       elegant: "优雅留白和衬线标题，适合产品、运营、咨询等岗位。",
       timeline: "用时间线突出经历顺序，适合经历跨度清晰的候选人。",
       creative: "强调色和卡片式布局，适合作品集、设计、增长等岗位。",
+      academic:
+        "左栏标题与日期、右栏正文的经典学术/欧式 CV，衬线字体、黑白极简。",
     },
   },
   en: {
@@ -330,6 +332,8 @@ export const dictionaries = {
       elegant: "Refined spacing and serif headings for polished professional roles.",
       timeline: "Chronological layout that emphasizes career and project progression.",
       creative: "Accent color and card layout for portfolio or presentation-heavy roles.",
+      academic:
+        "Classic academic CV with section labels and dates in the left margin and serif typography.",
     },
   },
   ko: {
@@ -480,6 +484,8 @@ export const dictionaries = {
       elegant: "여백과 세리프 제목을 살린 세련된 전문직 스타일입니다.",
       timeline: "경력과 프로젝트 흐름을 시간순으로 강조하는 레이아웃입니다.",
       creative: "강조색과 카드형 구성을 사용한 포트폴리오형 스타일입니다.",
+      academic:
+        "왼쪽에 섹션 제목과 날짜, 오른쪽에 본문을 두는 클래식 학술/유럽형 CV 레이아웃입니다.",
     },
   },
   es: {
@@ -640,6 +646,8 @@ export const dictionaries = {
         "Diseño cronológico que enfatiza la progresión de carrera y proyectos.",
       creative:
         "Color de acento y tarjetas para roles de portafolio o presentación visual.",
+      academic:
+        "CV académico clásico: títulos y fechas a la izquierda, contenido a la derecha, tipografía serif.",
     },
   },
   ja: {
@@ -792,6 +800,8 @@ export const dictionaries = {
       elegant: "余白とセリフ見出しを活かした上品なプロフェッショナル向けスタイルです。",
       timeline: "職歴やプロジェクトの流れを時系列で強調するレイアウトです。",
       creative: "アクセントカラーとカード型レイアウトで見せるポートフォリオ向けスタイルです。",
+      academic:
+        "左に見出しと日付、右に本文を置くクラシックな学術・欧州型CV、セリフ体のモノクロ構成です。",
     },
   },
   ru: {
@@ -945,6 +955,8 @@ export const dictionaries = {
       elegant: "Аккуратные отступы и serif-заголовки для профессионального образа.",
       timeline: "Хронологическая верстка, подчеркивающая карьерный и проектный путь.",
       creative: "Акцентный цвет и карточная структура для портфолио и визуальных ролей.",
+      academic:
+        "Классическое академическое CV: слева заголовки и даты, справа текст, строгая serif-верстка.",
     },
   },
   de: {
@@ -1098,6 +1110,8 @@ export const dictionaries = {
       elegant: "Ruhige Abstände und Serif-Überschriften für professionelle Rollen.",
       timeline: "Chronologisches Layout für Karriere- und Projektverlauf.",
       creative: "Akzentfarbe und Kartenlayout für Portfolio- oder visuelle Rollen.",
+      academic:
+        "Klassisches akademisches CV: links Abschnittstitel und Daten, rechts Inhalt, Serifen und Monochrom.",
     },
   },
   fr: {
@@ -1251,6 +1265,8 @@ export const dictionaries = {
       elegant: "Espacement raffiné et titres avec serif pour un rendu professionnel.",
       timeline: "Mise en page chronologique qui souligne la progression carrière/projets.",
       creative: "Couleur d'accent et cartes pour les rôles portfolio ou visuels.",
+      academic:
+        "CV académique classique : titres et dates à gauche, contenu à droite, serif sobre.",
     },
   },
 } satisfies Record<Locale, Record<string, unknown>>;

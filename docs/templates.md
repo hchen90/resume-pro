@@ -24,6 +24,7 @@ Provide multiple switchable resume layouts for live preview in the editor and fo
 | `elegant` | `elegant.tsx` | Elegant serif feel |
 | `timeline` | `timeline.tsx` | Timeline layout |
 | `creative` | `creative.tsx` | Creative visual |
+| `academic` | `academic.tsx` | Academic two-column (labels/dates left, content right) |
 
 Unknown `templateId` values fall back to `classic`.
 
