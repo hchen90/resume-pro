@@ -3,6 +3,10 @@ import "server-only";
 import { desc, eq } from "drizzle-orm";
 
 import { createDefaultResumeNodes } from "@/lib/resume/defaults";
+import {
+  defaultResumeFontPreset,
+  resolveResumeFontPreset,
+} from "@/lib/resume/fonts";
 import { defaultLocale, type Locale } from "@/lib/i18n";
 import type {
   Resume,
@@ -22,6 +26,7 @@ type ResumeRow = {
   id: string;
   title: string;
   templateId: string;
+  fontPreset: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -112,6 +117,7 @@ export async function createResume(
     id: crypto.randomUUID(),
     title,
     templateId: "classic",
+    fontPreset: defaultResumeFontPreset,
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -154,6 +160,7 @@ export async function saveResume(
   const resumeUpdate = {
     title: input.title,
     templateId: input.templateId,
+    fontPreset: input.fontPreset,
     updatedAt: timestamp,
   };
   const nodes = input.nodes.map<ResumeNode>((node, index) => ({
@@ -205,6 +212,7 @@ function toResumeWithNodes(
 ): ResumeWithNodes {
   return {
     ...resume,
+    fontPreset: resolveResumeFontPreset(resume.fontPreset),
     nodes: nodeRows
       .map((node) => ({
         id: node.id,

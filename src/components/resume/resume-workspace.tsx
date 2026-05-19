@@ -6,6 +6,11 @@ import { type DragEvent, useMemo, useState, useTransition } from "react";
 import { resumeTemplates } from "@/templates/resume/registry";
 import { dictionaries, type Locale } from "@/lib/i18n";
 import { createNode } from "@/lib/resume/defaults";
+import {
+  resumeFontPresets,
+  resolveResumeFontPreset,
+  type ResumeFontPreset,
+} from "@/lib/resume/fonts";
 import type {
   ResumeNode,
   ResumeNodeType,
@@ -145,6 +150,7 @@ export function ResumeWorkspace({
           body: JSON.stringify({
             title: resume.title,
             templateId: resume.templateId,
+            fontPreset: resume.fontPreset,
             nodes: resume.nodes,
           }),
         });
@@ -286,6 +292,29 @@ export function ResumeWorkspace({
               </select>
             </label>
 
+            <label className="mt-4 block text-sm text-[var(--app-muted)]">
+              {t.resumeFont}
+              <select
+                value={resolveResumeFontPreset(resume.fontPreset)}
+                onChange={(event) => {
+                  setResume({
+                    ...resume,
+                    fontPreset: event.target.value as ResumeFontPreset,
+                  });
+                  setSaveState("idle");
+                }}
+                className="mt-2 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 outline-none focus:border-[var(--app-accent)]"
+              >
+                {resumeFontPresets.map((preset) => (
+                  <option key={preset} value={preset}>
+                    {preset === "default"
+                      ? t.resumeFontDefault
+                      : t.resumeFontSerif}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <div className="mt-6 space-y-2">
               <p className="px-1 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--app-muted)]">
                 {t.nodesPanel}
@@ -360,7 +389,7 @@ export function ResumeWorkspace({
               {isPending ? t.saving : t.save}
             </button>
             <Link
-              href={`/resumes/${resume.id}/download?template=${resume.templateId}&${settingsQuery({ lang: locale, style: uiStyle })}`}
+              href={`/resumes/${resume.id}/download?template=${encodeURIComponent(resume.templateId)}&font=${encodeURIComponent(resolveResumeFontPreset(resume.fontPreset))}&${settingsQuery({ lang: locale, style: uiStyle })}`}
               className="mt-3 block rounded-lg border border-[var(--app-border)] px-4 py-3 text-center font-semibold text-[var(--app-text)] hover:bg-[var(--app-muted-surface)]"
             >
               {t.downloadPrint}

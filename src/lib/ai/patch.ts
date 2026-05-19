@@ -65,6 +65,7 @@ export function applyResumePatches(
   patches: ResumePatch[],
 ): ResumeSaveInput {
   let templateId = resume.templateId;
+  const fontPreset = resume.fontPreset;
   let nodes = resume.nodes.map((node) => ({ ...node, content: { ...node.content } }));
 
   for (const patch of patches) {
@@ -119,6 +120,7 @@ export function applyResumePatches(
   return {
     title: resume.title,
     templateId,
+    fontPreset,
     nodes: nodes.map((node, index) => ({
       id: node.id,
       type: node.type,

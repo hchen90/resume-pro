@@ -48,6 +48,7 @@ export type Resume = {
   id: string;
   title: string;
   templateId: string;
+  fontPreset: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -59,6 +60,7 @@ export type ResumeWithNodes = Resume & {
 export type ResumeSaveInput = {
   title: string;
   templateId: string;
+  fontPreset: string;
   nodes: Array<{
     id: string;
     type: ResumeNodeType;

@@ -19,6 +19,7 @@ export async function ensureDatabase() {
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         template_id TEXT NOT NULL DEFAULT 'classic',
+        font_preset TEXT NOT NULL DEFAULT 'default',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -49,12 +50,21 @@ export async function ensureDatabase() {
       CREATE INDEX IF NOT EXISTS job_descriptions_updated_idx
       ON job_descriptions (updated_at);
     `);
+
+    try {
+      client.raw.exec(
+        `ALTER TABLE resumes ADD COLUMN font_preset TEXT NOT NULL DEFAULT 'default';`,
+      );
+    } catch {
+      /* column already exists */
+    }
   } else {
     await client.db.execute(sql`
       CREATE TABLE IF NOT EXISTS resumes (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         template_id TEXT NOT NULL DEFAULT 'classic',
+        font_preset TEXT NOT NULL DEFAULT 'default',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -88,6 +98,10 @@ export async function ensureDatabase() {
     await client.db.execute(sql`
       CREATE INDEX IF NOT EXISTS job_descriptions_updated_idx
       ON job_descriptions (updated_at);
+    `);
+    await client.db.execute(sql`
+      ALTER TABLE resumes
+      ADD COLUMN IF NOT EXISTS font_preset TEXT NOT NULL DEFAULT 'default';
     `);
   }
 

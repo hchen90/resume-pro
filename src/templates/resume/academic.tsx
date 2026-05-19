@@ -15,7 +15,7 @@ function AcademicTemplate({ resume }: ResumeTemplateProps) {
   const profile = profileNode(resume);
 
   return (
-    <article className="min-h-[1123px] bg-white p-12 font-serif text-zinc-950">
+    <article className="min-h-[1123px] bg-white p-12 text-zinc-950">
       <header className="grid grid-cols-[72px_1fr] gap-10 border-b border-zinc-200 pb-8">
         <div className="flex items-start justify-center pt-1">
           <span

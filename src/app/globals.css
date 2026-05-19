@@ -66,6 +66,29 @@ html[data-ui-style="slate"] {
   --font-serif: var(--font-resume-serif);
 }
 
+.resume-document {
+  font-family: var(--resume-font-family, var(--font-resume-sans));
+}
+
+.resume-document[data-resume-font="default"] {
+  --resume-font-family: var(--font-resume-sans);
+}
+
+.resume-document[data-resume-font="serif"] {
+  --resume-font-family: var(--font-resume-serif);
+}
+
+/* Download/print page: keep resume layout identical to editor preview width */
+.print-page .resume-document {
+  display: block;
+  width: 100%;
+}
+
+.print-page .resume-document > article {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 body {
   background: var(--app-bg);
   color: var(--app-text);
@@ -103,7 +126,7 @@ textarea {
 
   body,
   .print-page,
-  .print-page * {
+  .print-page .resume-document {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
@@ -114,6 +137,7 @@ textarea {
   }
 
   main {
+    display: block !important;
     min-height: auto !important;
     padding: 0 !important;
   }
@@ -122,36 +146,79 @@ textarea {
     position: relative;
     z-index: 1;
     width: 210mm !important;
-    min-height: 297mm !important;
+    max-width: 210mm !important;
+    min-height: auto !important;
     box-shadow: none !important;
     margin: 0 !important;
     overflow: visible !important;
   }
 
-  .print-page > article {
-    width: 210mm !important;
+  .print-page .resume-document {
+    display: block !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    font-family: var(--resume-font-family, var(--font-resume-sans)) !important;
+    color: #18181b !important;
+  }
+
+  .print-page .resume-document > article {
+    width: 100% !important;
+    max-width: 210mm !important;
     min-height: auto !important;
   }
 
-  .print-page header {
+  .print-page .resume-document header {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
+  /* Preserve flex/grid used by resume templates in print */
+  .print-page .resume-document :where([class*="flex"]) {
+    display: flex !important;
+  }
+
+  .print-page .resume-document :where([class*="grid"]) {
+    display: grid !important;
+  }
+
+  .print-page .resume-document > article {
+    color: #18181b !important;
+  }
+
   /*
-   * Chrome print/PDF often uses only the first matching font without glyph fallback.
-   * Avoid Inter / Latin-only serifs; use system + CJK-named fonts instead.
+   * Chrome print may not paint Tailwind v4 oklch text colors; use hex on utilities.
    */
-  .print-page {
-    font-family: var(--font-resume-sans) !important;
+  .print-page .resume-document :where(
+      header[class*="text-white"],
+      header[class*="text-white"] *,
+      [class*="text-white"],
+      .text-zinc-300,
+      .text-amber-100,
+      .text-slate-200,
+      .resume-template-modern__sidebar,
+      .resume-template-modern__sidebar *
+    ) {
+    color: #f4f4f5 !important;
   }
 
-  .print-page .font-serif {
-    font-family: var(--font-resume-serif) !important;
+  .print-page .resume-document :where(.text-zinc-500, .text-zinc-600) {
+    color: #52525b !important;
   }
 
-  .print-page .font-sans {
-    font-family: var(--font-resume-sans) !important;
+  .print-page .resume-document :where(.text-zinc-700, .text-zinc-800) {
+    color: #3f3f46 !important;
+  }
+
+  .print-page .resume-document :where(.text-stone-500, .text-stone-600) {
+    color: #57534e !important;
+  }
+
+  .print-page .resume-document :where(.text-stone-700, .text-stone-800, .text-stone-950) {
+    color: #1c1917 !important;
+  }
+
+  .print-page .resume-document :where(.text-indigo-600, .text-indigo-700) {
+    color: #4338ca !important;
   }
 
   /* Fixed backdrop layers (real elements; Chrome ignores ::before for this) */

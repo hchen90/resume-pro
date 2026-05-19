@@ -18,7 +18,7 @@ function ElegantTemplate({ resume }: ResumeTemplateProps) {
         <p className="text-xs uppercase tracking-[0.5em] text-stone-500">
           {profile?.content.headline}
         </p>
-        <h1 className="mt-4 font-serif text-5xl tracking-tight">
+        <h1 className="mt-4 text-5xl tracking-tight">
           {profile?.content.name ?? resume.title}
         </h1>
         <p className="mx-auto mt-5 max-w-2xl border-y border-stone-300 py-3 text-xs uppercase tracking-[0.16em] text-stone-600">
@@ -29,7 +29,7 @@ function ElegantTemplate({ resume }: ResumeTemplateProps) {
       <div className="mt-10 space-y-9">
         {nonProfileNodes(resume).map((node) => (
           <section key={node.id}>
-            <h2 className="mb-4 flex items-center gap-4 font-serif text-2xl text-stone-900">
+            <h2 className="mb-4 flex items-center gap-4 text-2xl text-stone-900">
               <span>{node.title}</span>
               <span className="h-px flex-1 bg-stone-300" />
             </h2>
@@ -48,7 +48,7 @@ function ElegantTemplate({ resume }: ResumeTemplateProps) {
                   <div key={item.id}>
                     <div className="flex items-start justify-between gap-5">
                       <div>
-                        <h3 className="font-serif text-xl text-stone-950">
+                        <h3 className="text-xl text-stone-950">
                           {item.title || node.title}
                         </h3>
                         {item.subtitle ? (

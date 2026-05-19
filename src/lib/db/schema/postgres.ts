@@ -4,6 +4,7 @@ export const resumes = pgTable("resumes", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   templateId: text("template_id").notNull().default("classic"),
+  fontPreset: text("font_preset").notNull().default("default"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

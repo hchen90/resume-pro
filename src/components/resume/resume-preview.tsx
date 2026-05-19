@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import type { ResumeWithNodes } from "@/lib/resume/types";
 import { getResumeTemplate } from "@/templates/resume/registry";
 
+import { ResumeDocument } from "./resume-document";
+
 const paperWidth = 794;
 const paperHeight = 1123;
 const minScale = 0.25;
@@ -120,7 +122,9 @@ export function ResumePreview({
               transform: `scale(${scale})`,
             }}
           >
-            <Template resume={resume} />
+            <ResumeDocument fontPreset={resume.fontPreset}>
+              <Template resume={resume} />
+            </ResumeDocument>
           </div>
         </div>
       </div>

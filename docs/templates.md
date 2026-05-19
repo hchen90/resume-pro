@@ -28,12 +28,20 @@ Provide multiple switchable resume layouts for live preview in the editor and fo
 
 Unknown `templateId` values fall back to `classic`.
 
+## Typography (all templates)
+
+Resume fonts are **not** set per template file. Each resume stores `fontPreset` (`default` | `serif`) in the database. Preview and print wrap templates with `ResumeDocument` (`src/components/resume/resume-document.tsx`), which sets `data-resume-font` and drives `--resume-font-family` in `src/app/globals.css`.
+
+Users change the font in the editor sidebar; the download page shows the current preset read-only. When adding a template, do **not** use Tailwind `font-sans` / `font-serif` for resume content—use weight/size utilities only so print and CJK fallbacks stay consistent.
+
+Preset definitions: `src/lib/resume/fonts.ts`.
+
 ## Template contract
 
 Each template exports a `ResumeTemplate` object, typically including:
 
 - `id`, `name` (display label)
-- A React component that accepts `ResumeWithNodes` and locale and renders the full resume
+- A React component that accepts `ResumeWithNodes` and renders the full resume
 
 ## Usage
 

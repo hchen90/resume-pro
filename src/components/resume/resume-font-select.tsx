@@ -2,55 +2,50 @@
 
 import { useRouter } from "next/navigation";
 
+import {
+  resumeFontPresets,
+  type ResumeFontPreset,
+} from "@/lib/resume/fonts";
 import { downloadPageQuery } from "@/lib/resume/download-query";
-import type { ResumeFontPreset } from "@/lib/resume/fonts";
 
-type TemplateSelectProps = {
+type ResumeFontSelectProps = {
   resumeId: string;
-  selectedTemplateId: string;
   selectedFontPreset: ResumeFontPreset;
+  selectedTemplateId: string;
   settingsQuery: string;
   label: string;
-  templates: Array<{
-    id: string;
-    name: string;
-    description: string;
-  }>;
+  presetLabels: Record<ResumeFontPreset, string>;
 };
 
-export function TemplateSelect({
+export function ResumeFontSelect({
   resumeId,
-  selectedTemplateId,
   selectedFontPreset,
+  selectedTemplateId,
   settingsQuery,
   label,
-  templates,
-}: TemplateSelectProps) {
+  presetLabels,
+}: ResumeFontSelectProps) {
   const router = useRouter();
 
   return (
     <label className="text-sm font-medium text-[var(--app-muted)]">
       {label}
       <select
-        value={selectedTemplateId}
+        value={selectedFontPreset}
         onChange={(event) => {
           router.push(
             `/resumes/${resumeId}/download?${downloadPageQuery({
-              template: event.target.value,
-              font: selectedFontPreset,
+              template: selectedTemplateId,
+              font: event.target.value,
               settingsQuery,
             })}`,
           );
         }}
         className="mt-2 min-w-[220px] rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
       >
-        {templates.map((template) => (
-          <option
-            key={template.id}
-            value={template.id}
-            title={template.description}
-          >
-            {template.name}
+        {resumeFontPresets.map((preset) => (
+          <option key={preset} value={preset}>
+            {presetLabels[preset]}
           </option>
         ))}
       </select>

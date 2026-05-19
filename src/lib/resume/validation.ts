@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { resumeFontPresets } from "./fonts";
 import { resumeNodeTypes } from "./types";
 
 export const resumeNodeItemSchema = z.object({
@@ -38,5 +39,6 @@ export const resumeNodeSaveSchema = z.object({
 export const resumeSaveSchema = z.object({
   title: z.string().min(1).max(120),
   templateId: z.string().min(1),
+  fontPreset: z.enum(resumeFontPresets),
   nodes: z.array(resumeNodeSaveSchema).min(1),
 });

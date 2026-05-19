@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 
 import { PrintBackdropPortal } from "@/components/resume/print-backdrop-portal";
 import { PrintButton } from "@/components/resume/print-button";
+import { ResumeDocument } from "@/components/resume/resume-document";
+import { ResumeFontSelect } from "@/components/resume/resume-font-select";
 import { TemplateSelect } from "@/components/resume/template-select";
+import { resolveResumeFontPreset } from "@/lib/resume/fonts";
 import { getResume } from "@/lib/db/resume-repository";
 import { dictionaries, resolveLocale } from "@/lib/i18n";
 import {
@@ -24,9 +27,9 @@ export default async function ResumeDownloadPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ template?: string; lang?: string; ui?: string }>;
+  searchParams: Promise<{ template?: string; font?: string; lang?: string; ui?: string }>;
 }) {
-  const [{ id }, { template, lang, ui }, cookieStore] = await Promise.all([
+  const [{ id }, { template, font, lang, ui }, cookieStore] = await Promise.all([
     params,
     searchParams,
     cookies(),
@@ -43,6 +46,7 @@ export default async function ResumeDownloadPage({
   }
 
   const selectedTemplate = getResumeTemplate(template ?? resume.templateId);
+  const fontPreset = resolveResumeFontPreset(font ?? resume.fontPreset);
   const Template = selectedTemplate.component;
   const printBackdrop = getPrintBackdropVariant(selectedTemplate.id);
   const printPageBackgroundClass =
@@ -74,6 +78,7 @@ export default async function ResumeDownloadPage({
           <TemplateSelect
             resumeId={resume.id}
             selectedTemplateId={selectedTemplate.id}
+            selectedFontPreset={fontPreset}
             settingsQuery={query}
             label={t.defaultDownloadStyle}
             templates={resumeTemplates.map((item) => ({
@@ -84,16 +89,29 @@ export default async function ResumeDownloadPage({
                 item.description,
             }))}
           />
+          <ResumeFontSelect
+            resumeId={resume.id}
+            selectedFontPreset={fontPreset}
+            selectedTemplateId={selectedTemplate.id}
+            settingsQuery={query}
+            label={t.resumeFont}
+            presetLabels={{
+              default: t.resumeFontDefault,
+              serif: t.resumeFontSerif,
+            }}
+          />
           <PrintButton label={t.printPdf} />
         </div>
       </div>
 
       {printBackdrop ? <PrintBackdropPortal variant={printBackdrop} /> : null}
       <div
-        className={`print-page w-[794px] overflow-hidden shadow-2xl ${printPageBackgroundClass}`}
+        className={`print-page w-[794px] shadow-2xl print:overflow-visible ${printPageBackgroundClass}`}
         data-resume-template={selectedTemplate.id}
       >
-        <Template resume={{ ...resume, templateId: selectedTemplate.id }} />
+        <ResumeDocument fontPreset={fontPreset}>
+          <Template resume={{ ...resume, templateId: selectedTemplate.id }} />
+        </ResumeDocument>
       </div>
     </main>
   );
