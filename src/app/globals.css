@@ -188,6 +188,11 @@ textarea {
     min-height: auto !important;
   }
 
+  /* Screen A4 min-height should not force empty space across printed pages */
+  .print-page .resume-document :where([class~="min-h-[1123px]"]) {
+    min-height: auto !important;
+  }
+
   .print-page .resume-document header {
     break-inside: avoid;
     page-break-inside: avoid;
@@ -340,30 +345,39 @@ textarea {
     background: transparent !important;
   }
 
-  /* Modern: fixed backdrop + gradient; sidebar content stays on page 1 */
-  .resume-template-modern {
-    display: block !important;
+  /*
+   * Modern: keep the same grid as screen (float + page-break-inside: avoid on the
+   * sidebar caused huge gaps in the main column). Fixed backdrop still paints the
+   * left bar on every printed page.
+   */
+  .print-page .resume-document .resume-template-modern {
+    display: grid !important;
+    grid-template-columns: 240px 1fr !important;
+    align-items: start !important;
     position: relative;
     z-index: 1;
+    min-height: auto !important;
     background: transparent !important;
   }
 
-  .resume-template-modern__sidebar {
+  .print-page .resume-document .resume-template-modern__sidebar {
     position: relative;
     z-index: 1;
-    float: left;
+    float: none !important;
     box-sizing: border-box;
-    width: 240px;
-    break-inside: avoid;
-    page-break-inside: avoid;
+    width: auto !important;
+    max-width: 240px;
+    break-inside: auto;
+    page-break-inside: auto;
     background-color: transparent !important;
     background-image: none !important;
   }
 
-  .resume-template-modern__main {
+  .print-page .resume-document .resume-template-modern__main {
     position: relative;
     z-index: 1;
-    margin-left: 240px;
+    float: none !important;
+    margin-left: 0 !important;
     background: transparent !important;
   }
 }
