@@ -13,7 +13,7 @@ import type {
 } from "@/lib/resume/types";
 import { settingsQuery, type UiStyle } from "@/lib/settings";
 
-import { AiPanel } from "./ai-panel";
+import { AiFloatingAssistant } from "./ai-floating-assistant";
 import { NodeEditor } from "./node-editor";
 import { ResumePreview } from "./resume-preview";
 
@@ -45,7 +45,6 @@ export function ResumeWorkspace({
   const [saveState, setSaveState] = useState<"idle" | "saved" | "error">("idle");
   const [isPending, startTransition] = useTransition();
   const [isNodesCollapsed, setIsNodesCollapsed] = useState(false);
-  const [isAiCollapsed, setIsAiCollapsed] = useState(false);
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -190,7 +189,6 @@ export function ResumeWorkspace({
     <main
       className={`mx-auto grid w-full max-w-[1600px] flex-1 gap-4 px-4 py-5 xl:gap-5 xl:px-5 ${workspaceGridClass(
         isNodesCollapsed,
-        isAiCollapsed,
       )}`}
     >
       <nav
@@ -434,36 +432,15 @@ export function ResumeWorkspace({
         />
       </section>
 
-      <div className="no-print min-w-0">
-        {isAiCollapsed ? (
-          <button
-            type="button"
-            onClick={() => setIsAiCollapsed(false)}
-            className="flex min-h-[620px] w-full flex-col items-center justify-center gap-4 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 text-[var(--app-muted)] shadow-sm transition hover:bg-[var(--app-muted-surface)]"
-            title={t.expandAi}
-            aria-label={t.expandAi}
-          >
-            <span className="rounded-md bg-[var(--app-accent-soft)] px-2 py-1 text-xs font-semibold text-[var(--app-accent)] ring-1 ring-[var(--app-accent-border)]">
-              AI
-            </span>
-            <span className="[writing-mode:vertical-rl] text-xs font-semibold uppercase tracking-[0.24em] text-[var(--app-muted)]">
-              {t.aiAssistant}
-            </span>
-            <RightSidebarIcon action="expand" />
-          </button>
-        ) : (
-          <AiPanel
-            resume={resume}
-            selectedNodeId={selectedNode?.id ?? ""}
-            locale={locale}
-            onCollapse={() => setIsAiCollapsed(true)}
-            onResumeUpdated={(updatedResume) => {
-              setResume(updatedResume);
-              setSaveState("saved");
-            }}
-          />
-        )}
-      </div>
+      <AiFloatingAssistant
+        resume={resume}
+        selectedNodeId={selectedNode?.id ?? ""}
+        locale={locale}
+        onResumeUpdated={(updatedResume) => {
+          setResume(updatedResume);
+          setSaveState("saved");
+        }}
+      />
     </main>
   );
 }
@@ -472,20 +449,12 @@ function defaultTitle(type: ResumeNodeType, locale: Locale) {
   return dictionaries[locale].nodeTitles[type];
 }
 
-function workspaceGridClass(nodesCollapsed: boolean, aiCollapsed: boolean) {
-  if (nodesCollapsed && aiCollapsed) {
-    return "xl:grid-cols-[64px_minmax(0,1fr)_56px] 2xl:grid-cols-[72px_minmax(0,1fr)_64px]";
-  }
-
+function workspaceGridClass(nodesCollapsed: boolean) {
   if (nodesCollapsed) {
-    return "xl:grid-cols-[64px_minmax(0,1fr)_minmax(280px,320px)] 2xl:grid-cols-[72px_minmax(0,1fr)_380px]";
+    return "xl:grid-cols-[64px_minmax(0,1fr)] 2xl:grid-cols-[72px_minmax(0,1fr)]";
   }
 
-  if (aiCollapsed) {
-    return "xl:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_56px] 2xl:grid-cols-[280px_minmax(0,1fr)_64px]";
-  }
-
-  return "xl:grid-cols-[minmax(220px,260px)_minmax(0,1fr)_minmax(280px,320px)] 2xl:grid-cols-[280px_minmax(0,1fr)_380px]";
+  return "xl:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] 2xl:grid-cols-[280px_minmax(0,1fr)]";
 }
 
 function PanelIcon({ direction }: { direction: "left" | "right" }) {
@@ -520,22 +489,3 @@ function DragHandleIcon() {
   );
 }
 
-function RightSidebarIcon({ action }: { action: "expand" | "collapse" }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 16 16"
-      className="h-4 w-4"
-      fill="currentColor"
-    >
-      <path d="M2.75 3A1.75 1.75 0 0 1 4.5 1.25h7A1.75 1.75 0 0 1 13.25 3v10a1.75 1.75 0 0 1-1.75 1.75h-7A1.75 1.75 0 0 1 2.75 13V3Zm1.75-.25A.25.25 0 0 0 4.25 3v10c0 .14.11.25.25.25h4.75V2.75H4.5Zm6.25 10.5h.75c.14 0 .25-.11.25-.25V3a.25.25 0 0 0-.25-.25h-.75v10.5Z" />
-      <path
-        d={
-          action === "expand"
-            ? "M5.22 5.47a.75.75 0 0 1 1.06 0l2 2a.75.75 0 0 1 0 1.06l-2 2a.75.75 0 1 1-1.06-1.06L6.69 8 5.22 6.53a.75.75 0 0 1 0-1.06Z"
-            : "M7.78 5.47a.75.75 0 0 1 0 1.06L6.31 8l1.47 1.47a.75.75 0 0 1-1.06 1.06L4.72 8.53a.75.75 0 0 1 0-1.06l2-2a.75.75 0 0 1 1.06 0Z"
-        }
-      />
-    </svg>
-  );
-}

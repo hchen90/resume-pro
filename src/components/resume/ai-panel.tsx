@@ -11,6 +11,7 @@ type AiPanelProps = {
   resume: ResumeWithNodes;
   selectedNodeId: string;
   locale: Locale;
+  variant?: "default" | "floating";
   onCollapse: () => void;
   onResumeUpdated: (resume: ResumeWithNodes) => void;
 };
@@ -24,6 +25,7 @@ export function AiPanel({
   resume,
   selectedNodeId,
   locale,
+  variant = "default",
   onCollapse,
   onResumeUpdated,
 }: AiPanelProps) {
@@ -173,8 +175,13 @@ export function AiPanel({
     void sendMessage();
   }
 
+  const rootClassName =
+    variant === "floating"
+      ? "flex h-full min-h-0 min-w-0 flex-col p-4 text-[var(--app-text)]"
+      : "flex min-h-[620px] min-w-0 flex-col rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-[var(--app-text)] shadow-sm";
+
   return (
-    <aside className="flex min-h-[620px] min-w-0 flex-col rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-[var(--app-text)] shadow-sm">
+    <aside className={rootClassName}>
       <div>
         <div className="flex items-start justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--app-accent)]">
@@ -187,15 +194,26 @@ export function AiPanel({
             title={t.collapseAi}
             aria-label={t.collapseAi}
           >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 16 16"
-              className="h-4 w-4"
-              fill="currentColor"
-            >
-              <path d="M2.75 3A1.75 1.75 0 0 1 4.5 1.25h7A1.75 1.75 0 0 1 13.25 3v10a1.75 1.75 0 0 1-1.75 1.75h-7A1.75 1.75 0 0 1 2.75 13V3Zm1.75-.25A.25.25 0 0 0 4.25 3v10c0 .14.11.25.25.25h4.75V2.75H4.5Zm6.25 10.5h.75c.14 0 .25-.11.25-.25V3a.25.25 0 0 0-.25-.25h-.75v10.5Z" />
-              <path d="M7.78 5.47a.75.75 0 0 1 0 1.06L6.31 8l1.47 1.47a.75.75 0 0 1-1.06 1.06L4.72 8.53a.75.75 0 0 1 0-1.06l2-2a.75.75 0 0 1 1.06 0Z" />
-            </svg>
+            {variant === "floating" ? (
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                className="h-4 w-4"
+                fill="currentColor"
+              >
+                <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 1 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
+              </svg>
+            ) : (
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                className="h-4 w-4"
+                fill="currentColor"
+              >
+                <path d="M2.75 3A1.75 1.75 0 0 1 4.5 1.25h7A1.75 1.75 0 0 1 13.25 3v10a1.75 1.75 0 0 1-1.75 1.75h-7A1.75 1.75 0 0 1 2.75 13V3Zm1.75-.25A.25.25 0 0 0 4.25 3v10c0 .14.11.25.25.25h4.75V2.75H4.5Zm6.25 10.5h.75c.14 0 .25-.11.25-.25V3a.25.25 0 0 0-.25-.25h-.75v10.5Z" />
+                <path d="M7.78 5.47a.75.75 0 0 1 0 1.06L6.31 8l1.47 1.47a.75.75 0 0 1-1.06 1.06L4.72 8.53a.75.75 0 0 1 0-1.06l2-2a.75.75 0 0 1 1.06 0Z" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
