@@ -30,9 +30,11 @@ Unknown `templateId` values fall back to `classic`.
 
 ## Typography (all templates)
 
-Resume fonts are **not** set per template file. Each resume stores `fontPreset` (`default` | `serif`) in the database. Preview and print wrap templates with `ResumeDocument` (`src/components/resume/resume-document.tsx`), which sets `data-resume-font` and drives `--resume-font-family` in `src/app/globals.css`.
+Resume fonts are **not** set per template file. Each resume stores a `fontPreset` id in the database. Preview and print wrap templates with `ResumeDocument` (`src/components/resume/resume-document.tsx`), which sets `data-resume-font` and drives `--resume-font-family` in `src/app/globals.css`.
 
-Users change the font in the editor sidebar; the download page shows the current preset read-only. When adding a template, do **not** use Tailwind `font-sans` / `font-serif` for resume content—use weight/size utilities only so print and CJK fallbacks stay consistent.
+Font preset **names are fixed typography labels** (e.g. `Serif`, `宋体`, `楷体`, `Courier New`) and are not translated with the UI locale. Resume text uses **self-hosted OFL fonts** loaded via `@fontsource/*` in `src/lib/resume/load-bundled-fonts.ts` (mounted by `BundledResumeFonts` inside `ResumeDocument`). Bundled subsets cover **Latin + Latin Extended** (en, es, fr, de), **Cyrillic** (ru), and **SC / TC / JP / KR** for Chinese (simplified & traditional), Japanese, and Korean. CSS stacks list regional Noto families plus base `Noto Sans` / `Noto Serif` in `src/app/globals.css`. App chrome uses `--font-app-ui`, not resume fonts.
+
+When adding a template, do **not** use Tailwind `font-sans` / `font-serif` for resume content—use weight/size utilities only.
 
 Preset definitions: `src/lib/resume/fonts.ts`.
 

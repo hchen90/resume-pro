@@ -2,11 +2,13 @@
 
 import { useRouter } from "next/navigation";
 
+import { downloadPageQuery } from "@/lib/resume/download-query";
 import {
-  resumeFontPresets,
+  getFontPresets,
+  resolveResumeFontPreset,
+  resumeFontPresetLabel,
   type ResumeFontPreset,
 } from "@/lib/resume/fonts";
-import { downloadPageQuery } from "@/lib/resume/download-query";
 
 type ResumeFontSelectProps = {
   resumeId: string;
@@ -14,7 +16,6 @@ type ResumeFontSelectProps = {
   selectedTemplateId: string;
   settingsQuery: string;
   label: string;
-  presetLabels: Record<ResumeFontPreset, string>;
 };
 
 export function ResumeFontSelect({
@@ -23,15 +24,15 @@ export function ResumeFontSelect({
   selectedTemplateId,
   settingsQuery,
   label,
-  presetLabels,
 }: ResumeFontSelectProps) {
   const router = useRouter();
+  const resolvedSelection = resolveResumeFontPreset(selectedFontPreset);
 
   return (
     <label className="text-sm font-medium text-[var(--app-muted)]">
       {label}
       <select
-        value={selectedFontPreset}
+        value={resolvedSelection}
         onChange={(event) => {
           router.push(
             `/resumes/${resumeId}/download?${downloadPageQuery({
@@ -43,9 +44,9 @@ export function ResumeFontSelect({
         }}
         className="mt-2 min-w-[220px] rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
       >
-        {resumeFontPresets.map((preset) => (
+        {getFontPresets().map((preset) => (
           <option key={preset} value={preset}>
-            {presetLabels[preset]}
+            {resumeFontPresetLabel(preset)}
           </option>
         ))}
       </select>

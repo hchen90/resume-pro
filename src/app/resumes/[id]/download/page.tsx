@@ -95,10 +95,6 @@ export default async function ResumeDownloadPage({
             selectedTemplateId={selectedTemplate.id}
             settingsQuery={query}
             label={t.resumeFont}
-            presetLabels={{
-              default: t.resumeFontDefault,
-              serif: t.resumeFontSerif,
-            }}
           />
           <PrintButton label={t.printPdf} />
         </div>

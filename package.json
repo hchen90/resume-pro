@@ -21,6 +21,18 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@fontsource/lxgw-wenkai": "^5.2.5",
+    "@fontsource/noto-sans": "^5.2.10",
+    "@fontsource/noto-sans-jp": "^5.2.9",
+    "@fontsource/noto-sans-kr": "^5.2.9",
+    "@fontsource/noto-sans-mono": "^5.2.10",
+    "@fontsource/noto-sans-sc": "^5.2.9",
+    "@fontsource/noto-sans-tc": "^5.2.9",
+    "@fontsource/noto-serif": "^5.2.9",
+    "@fontsource/noto-serif-jp": "^5.2.7",
+    "@fontsource/noto-serif-kr": "^5.2.9",
+    "@fontsource/noto-serif-sc": "^5.2.8",
+    "@fontsource/noto-serif-tc": "^5.2.10",
     "@langchain/core": "^1.1.45",
     "@langchain/openai": "^1.4.5",
     "better-sqlite3": "^12.9.0",

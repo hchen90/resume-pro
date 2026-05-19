@@ -5,6 +5,8 @@ import {
   type ResumeFontPreset,
 } from "@/lib/resume/fonts";
 
+import { BundledResumeFonts } from "./bundled-resume-fonts";
+
 export function ResumeDocument({
   fontPreset,
   className,
@@ -25,6 +27,7 @@ export function ResumeDocument({
       }
       data-resume-font={resolved}
     >
+      <BundledResumeFonts />
       {children}
     </div>
   );

@@ -7,8 +7,9 @@ import { resumeTemplates } from "@/templates/resume/registry";
 import { dictionaries, type Locale } from "@/lib/i18n";
 import { createNode } from "@/lib/resume/defaults";
 import {
-  resumeFontPresets,
+  getFontPresets,
   resolveResumeFontPreset,
+  resumeFontPresetLabel,
   type ResumeFontPreset,
 } from "@/lib/resume/fonts";
 import type {
@@ -305,11 +306,9 @@ export function ResumeWorkspace({
                 }}
                 className="mt-2 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 outline-none focus:border-[var(--app-accent)]"
               >
-                {resumeFontPresets.map((preset) => (
+                {getFontPresets().map((preset) => (
                   <option key={preset} value={preset}>
-                    {preset === "default"
-                      ? t.resumeFontDefault
-                      : t.resumeFontSerif}
+                    {resumeFontPresetLabel(preset)}
                   </option>
                 ))}
               </select>
@@ -452,6 +451,7 @@ export function ResumeWorkspace({
         ) : null}
         <ResumePreview
           resume={resume}
+          locale={locale}
           labels={{
             fit: t.previewFit,
             zoomIn: t.previewZoomIn,

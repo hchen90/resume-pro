@@ -19,7 +19,7 @@ export async function ensureDatabase() {
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         template_id TEXT NOT NULL DEFAULT 'classic',
-        font_preset TEXT NOT NULL DEFAULT 'default',
+        font_preset TEXT NOT NULL DEFAULT 'sans',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -53,7 +53,7 @@ export async function ensureDatabase() {
 
     try {
       client.raw.exec(
-        `ALTER TABLE resumes ADD COLUMN font_preset TEXT NOT NULL DEFAULT 'default';`,
+        `ALTER TABLE resumes ADD COLUMN font_preset TEXT NOT NULL DEFAULT 'sans';`,
       );
     } catch {
       /* column already exists */
@@ -64,7 +64,7 @@ export async function ensureDatabase() {
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         template_id TEXT NOT NULL DEFAULT 'classic',
-        font_preset TEXT NOT NULL DEFAULT 'default',
+        font_preset TEXT NOT NULL DEFAULT 'sans',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
@@ -101,7 +101,7 @@ export async function ensureDatabase() {
     `);
     await client.db.execute(sql`
       ALTER TABLE resumes
-      ADD COLUMN IF NOT EXISTS font_preset TEXT NOT NULL DEFAULT 'default';
+      ADD COLUMN IF NOT EXISTS font_preset TEXT NOT NULL DEFAULT 'sans';
     `);
   }
 

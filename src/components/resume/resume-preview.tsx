@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import type { Locale } from "@/lib/i18n";
 import type { ResumeWithNodes } from "@/lib/resume/types";
 import { getResumeTemplate } from "@/templates/resume/registry";
 
@@ -22,9 +23,11 @@ type ResumePreviewLabels = {
 
 export function ResumePreview({
   resume,
+  locale,
   labels,
 }: {
   resume: ResumeWithNodes;
+  locale: Locale;
   labels: ResumePreviewLabels;
 }) {
   const Template = getResumeTemplate(resume.templateId).component;
