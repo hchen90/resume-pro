@@ -15,7 +15,7 @@ function CreativeTemplate({ resume }: ResumeTemplateProps) {
   const sections = nonProfileNodes(resume).filter((node) => node.type !== "skills");
 
   return (
-    <article className="min-h-[1123px] bg-[#f6f8fb] p-10 text-zinc-950">
+    <article className="resume-template-creative min-h-[1123px] bg-[#f6f8fb] p-10 text-zinc-950 print:!bg-transparent">
       <header className="rounded-[28px] bg-gradient-to-br from-indigo-600 to-cyan-500 p-8 text-white">
         <p className="text-sm font-medium uppercase tracking-[0.28em] text-white/75">
           {profile?.content.headline}

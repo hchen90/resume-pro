@@ -13,7 +13,7 @@ function ElegantTemplate({ resume }: ResumeTemplateProps) {
   const profile = profileNode(resume);
 
   return (
-    <article className="min-h-[1123px] bg-[#fbfaf7] p-12 text-stone-950">
+    <article className="resume-template-elegant min-h-[1123px] bg-[#fbfaf7] p-12 text-stone-950">
       <header className="text-center">
         <p className="text-xs uppercase tracking-[0.5em] text-stone-500">
           {profile?.content.headline}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
+import { PrintBackdropPortal } from "@/components/resume/print-backdrop-portal";
 import { PrintButton } from "@/components/resume/print-button";
 import { TemplateSelect } from "@/components/resume/template-select";
 import { getResume } from "@/lib/db/resume-repository";
@@ -13,6 +14,7 @@ import {
   settingsQuery,
   uiStyleCookieName,
 } from "@/lib/settings";
+import { getPrintBackdropVariant } from "@/templates/resume/print-backdrop";
 import { getResumeTemplate, resumeTemplates } from "@/templates/resume/registry";
 
 type TemplateDescriptionId = keyof typeof dictionaries.en.templateDescriptions;
@@ -42,6 +44,13 @@ export default async function ResumeDownloadPage({
 
   const selectedTemplate = getResumeTemplate(template ?? resume.templateId);
   const Template = selectedTemplate.component;
+  const printBackdrop = getPrintBackdropVariant(selectedTemplate.id);
+  const printPageBackgroundClass =
+    selectedTemplate.id === "elegant"
+      ? "bg-[#fbfaf7]"
+      : selectedTemplate.id === "creative"
+        ? "bg-[#f6f8fb]"
+        : "bg-white";
   const query = settingsQuery({ lang: locale, style: uiStyle });
 
   return (
@@ -79,7 +88,11 @@ export default async function ResumeDownloadPage({
         </div>
       </div>
 
-      <div className="print-page w-[794px] overflow-hidden bg-white shadow-2xl">
+      {printBackdrop ? <PrintBackdropPortal variant={printBackdrop} /> : null}
+      <div
+        className={`print-page w-[794px] overflow-hidden shadow-2xl ${printPageBackgroundClass}`}
+        data-resume-template={selectedTemplate.id}
+      >
         <Template resume={{ ...resume, templateId: selectedTemplate.id }} />
       </div>
     </main>

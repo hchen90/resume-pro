@@ -15,8 +15,8 @@ function ModernTemplate({ resume }: ResumeTemplateProps) {
   const sections = nonProfileNodes(resume).filter((node) => node.type !== "skills");
 
   return (
-    <article className="grid min-h-[1123px] grid-cols-[240px_1fr] bg-white text-zinc-950">
-      <aside className="bg-zinc-950 p-8 text-white">
+    <article className="resume-template-modern grid min-h-[1123px] grid-cols-[240px_1fr] bg-white text-zinc-950">
+      <aside className="resume-template-modern__sidebar bg-zinc-950 p-8 text-white print:!bg-transparent">
         <h1 className="text-3xl font-semibold leading-tight">
           {profile?.content.name ?? resume.title}
         </h1>
@@ -46,7 +46,7 @@ function ModernTemplate({ resume }: ResumeTemplateProps) {
         ) : null}
       </aside>
 
-      <div className="space-y-8 p-10">
+      <div className="resume-template-modern__main space-y-8 p-10">
         {sections.map((node) => (
           <section key={node.id}>
             <h2 className="border-b border-zinc-200 pb-2 text-lg font-semibold">

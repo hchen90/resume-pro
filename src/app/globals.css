@@ -77,8 +77,16 @@ textarea {
   body {
     width: 210mm;
     min-height: 297mm;
-    background: white;
     margin: 0 !important;
+  }
+
+  html:not(:has(.print-page[data-resume-template="elegant"])):not(
+      :has(.print-page[data-resume-template="creative"])
+    ),
+  body:not(:has(.print-page[data-resume-template="elegant"])):not(
+      :has(.print-page[data-resume-template="creative"])
+    ) {
+    background: white;
   }
 
   body,
@@ -99,6 +107,8 @@ textarea {
   }
 
   .print-page {
+    position: relative;
+    z-index: 1;
     width: 210mm !important;
     min-height: 297mm !important;
     box-shadow: none !important;
@@ -108,13 +118,124 @@ textarea {
 
   .print-page > article {
     width: 210mm !important;
-    min-height: 297mm !important;
+    min-height: auto !important;
   }
 
-  .print-page section,
-  .print-page header,
-  .print-page aside {
+  .print-page header {
     break-inside: avoid;
     page-break-inside: avoid;
   }
+
+  /* Fixed backdrop layers (real elements; Chrome ignores ::before for this) */
+  .resume-print-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .resume-print-backdrop--elegant-full,
+  .resume-print-backdrop--creative-full {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .resume-print-backdrop--elegant-full {
+    background-color: #fbfaf7;
+  }
+
+  .resume-print-backdrop--creative-full {
+    background-color: #f6f8fb;
+  }
+
+  .resume-print-backdrop--modern-sidebar {
+    top: 0;
+    right: auto;
+    bottom: 0;
+    width: 240px;
+    height: auto;
+    min-height: 100vh;
+    background-color: #09090b;
+  }
+
+  .print-page[data-resume-template="modern"] {
+    background: linear-gradient(to right, #09090b 240px, #ffffff 240px) !important;
+    background-attachment: fixed;
+  }
+
+  html:has(.print-page[data-resume-template="modern"]),
+  body:has(.print-page[data-resume-template="modern"]) {
+    background: linear-gradient(to right, #09090b 240px, #ffffff 240px) !important;
+    background-attachment: fixed;
+  }
+
+  .print-page[data-resume-template="elegant"] {
+    background-color: #fbfaf7 !important;
+    background-attachment: fixed;
+  }
+
+  html:has(.print-page[data-resume-template="elegant"]),
+  body:has(.print-page[data-resume-template="elegant"]) {
+    background-color: #fbfaf7 !important;
+    background-attachment: fixed;
+  }
+
+  .print-page[data-resume-template="creative"] {
+    background-color: #f6f8fb !important;
+    background-attachment: fixed;
+  }
+
+  html:has(.print-page[data-resume-template="creative"]),
+  body:has(.print-page[data-resume-template="creative"]) {
+    background-color: #f6f8fb !important;
+    background-attachment: fixed;
+  }
+
+  .resume-template-elegant,
+  .resume-template-creative {
+    position: relative;
+    z-index: 1;
+    background: transparent !important;
+  }
+
+  /* Modern: fixed backdrop + gradient; sidebar content stays on page 1 */
+  .resume-template-modern {
+    display: block !important;
+    position: relative;
+    z-index: 1;
+    background: transparent !important;
+  }
+
+  .resume-template-modern__sidebar {
+    position: relative;
+    z-index: 1;
+    float: left;
+    box-sizing: border-box;
+    width: 240px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  .resume-template-modern__main {
+    position: relative;
+    z-index: 1;
+    margin-left: 240px;
+    background: transparent !important;
+  }
+}
+
+.resume-print-backdrop {
+  display: none;
 }
