@@ -30,13 +30,9 @@ function AcademicTemplate({ resume }: ResumeTemplateProps) {
             {profile?.content.name ?? resume.title}
           </h1>
           {profile?.content.headline ? (
-            <p className="mt-2 font-sans text-base text-zinc-700">
-              {profile.content.headline}
-            </p>
+            <p className="mt-2 text-base text-zinc-700">{profile.content.headline}</p>
           ) : null}
-          <p className="mt-3 font-sans text-sm text-zinc-600">
-            {contactLine(profile)}
-          </p>
+          <p className="mt-3 text-sm text-zinc-600">{contactLine(profile)}</p>
         </div>
       </header>
 
@@ -73,7 +69,7 @@ function AcademicTemplate({ resume }: ResumeTemplateProps) {
                           {node.title}
                         </h2>
                       ) : null}
-                      <div className="font-sans text-xs leading-5 text-zinc-500">
+                      <div className="text-xs leading-5 text-zinc-500">
                         <p>{itemDateRange(item)}</p>
                         {item.location ? (
                           <p className="mt-1">{item.location}</p>
