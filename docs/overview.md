@@ -38,8 +38,8 @@ flowchart LR
   UI[Pages / components] --> Actions[Server Actions / API]
   Actions --> Repo[Repositories]
   Repo --> DB[(SQLite / Postgres)]
-  UI --> AI[/api/ai]
-  AI --> LLM[OpenAI-compatible API]
+  UI --> AI["/api/ai"]
+  AI --> LLM["OpenAI-compatible API"]
   AI --> Repo
 ```
 
