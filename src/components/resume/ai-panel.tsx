@@ -419,6 +419,15 @@ export function AiPanel({
     void sendMessage();
   }
 
+  function handleInputKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) {
+      return;
+    }
+
+    event.preventDefault();
+    void sendMessage();
+  }
+
   const rootClassName =
     variant === "drawer"
       ? "flex h-full min-h-0 min-w-0 flex-col p-4 text-[var(--app-text)]"
@@ -611,6 +620,7 @@ export function AiPanel({
         <textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
+          onKeyDown={handleInputKeyDown}
           rows={4}
           placeholder={t.aiPlaceholder}
           disabled={isLoading}
