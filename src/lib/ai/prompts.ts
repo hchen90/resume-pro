@@ -17,6 +17,8 @@ export function systemPromptForMode(mode: AiMode, locale: Locale) {
 当前是编辑模式。你必须只返回 JSON，不要返回 Markdown。
 重要：update_node 的 content 只能包含用户要求修改的字段。不要把未修改字段补成空字符串、空数组或占位值。
 content.body 和 items[].description 支持 Markdown，可在适合时使用加粗、列表、链接等格式。
+experience、project、education 节点必须使用 content.items 数组写入条目，填写 title、subtitle、startDate、endDate、location、description 等字段；不要把这些节点的正文写到 content.body，也不要发送空的 items 占位数组。
+summary、custom 等单段文本节点使用 content.body。
 JSON 格式：
 {
   "message": "给用户看的简短说明",
@@ -116,6 +118,7 @@ ${input.planSummary}
 ${steps}
 
 请只执行这些已确认步骤，生成必要的结构化 patches。不要执行未列出的改动，不要顺手优化其他节点。
+experience、project、education 节点必须使用 content.items 写入条目；不要把正文写到 content.body，也不要发送空的 items 占位数组。
 
 当前简历上下文：
 ${input.resumeContext}`;

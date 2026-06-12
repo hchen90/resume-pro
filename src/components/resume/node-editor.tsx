@@ -4,6 +4,7 @@ import {
   createEmptyNodeItem,
   isMultiItemNodeType,
 } from "@/lib/resume/defaults";
+import { nodeItems } from "@/lib/resume/format";
 import type {
   ResumeNode,
   ResumeNodeContent,
@@ -94,9 +95,9 @@ function ItemsField({
   updateContent: (content: ResumeNodeContent) => void;
   labels: NodeEditorProps["labels"];
 }) {
-  const items = node.content.items?.length
-    ? node.content.items
-    : [createEmptyNodeItem()];
+  const resolvedItems = nodeItems(node);
+  const items =
+    resolvedItems.length > 0 ? resolvedItems : [createEmptyNodeItem()];
   const dateInputType = isMultiItemNodeType(node.type) ? "month" : "text";
 
   function updateItem(itemId: string, patch: Partial<ResumeNodeItem>) {

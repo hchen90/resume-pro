@@ -7,8 +7,9 @@ export const aiModes = ["chat", "edit", "plan"] as const;
 export type AiMode = (typeof aiModes)[number];
 
 export type AiMessage = {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
+  aiMode?: AiMode;
 };
 
 export type AiResponse = {

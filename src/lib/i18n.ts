@@ -146,9 +146,20 @@ export const dictionaries = {
     aiPlanReview: "待确认计划",
     aiExecutePlan: "执行选中步骤",
     aiCancelPlan: "取消计划",
+    aiLoadingChat: "正在思考…",
+    aiLoadingEditAnalyzing: "正在分析简历与需求…",
+    aiLoadingEditApplying: "正在应用结构化修改…",
+    aiLoadingPlanDrafting: "正在生成执行计划…",
+    aiLoadingPlanExecuting: "正在执行计划…",
+    aiModeSwitched: (mode: string) => `已切换至 ${mode}`,
+    aiCancelRequest: "取消",
+    aiRequestTimeout: "请求超时，请检查网络或 AI 配置后重试。",
+    aiRequestCancelled: "已取消当前请求。",
     aiError: "AI 请求失败",
     aiNotConfigured:
       "API 密钥尚未配置。我已经读取到当前简历结构，但需要先配置 AI 服务商和 API 密钥后才能调用模型。",
+    aiEditParseFailed: "模型返回的修改格式无法解析，请重试或换一种表述。",
+    aiEditNoChanges: "未能生成有效的简历修改。",
     aiModes: {
       chat: "普通对话",
       edit: "编辑模式",
@@ -304,9 +315,22 @@ export const dictionaries = {
     aiPlanReview: "Plan pending review",
     aiExecutePlan: "Execute selected steps",
     aiCancelPlan: "Cancel plan",
+    aiLoadingChat: "Thinking…",
+    aiLoadingEditAnalyzing: "Analyzing resume and request…",
+    aiLoadingEditApplying: "Applying structured edits…",
+    aiLoadingPlanDrafting: "Drafting execution plan…",
+    aiLoadingPlanExecuting: "Executing plan…",
+    aiModeSwitched: (mode: string) => `Switched to ${mode}`,
+    aiCancelRequest: "Cancel",
+    aiRequestTimeout:
+      "Request timed out. Check your network or AI settings and try again.",
+    aiRequestCancelled: "Request cancelled.",
     aiError: "AI request failed",
     aiNotConfigured:
       "The API key is not configured. I can read the current resume structure, but an AI provider and API key are required before calling a model.",
+    aiEditParseFailed:
+      "The model response could not be parsed as resume edits. Try again or rephrase your request.",
+    aiEditNoChanges: "No valid resume edits were generated.",
     aiModes: {
       chat: "Chat",
       edit: "Edit",
@@ -458,9 +482,22 @@ export const dictionaries = {
     aiPlanReview: "확인 대기 중인 계획",
     aiExecutePlan: "선택한 단계 실행",
     aiCancelPlan: "계획 취소",
+    aiLoadingChat: "생각 중…",
+    aiLoadingEditAnalyzing: "이력서와 요청을 분석하는 중…",
+    aiLoadingEditApplying: "구조화된 수정을 적용하는 중…",
+    aiLoadingPlanDrafting: "실행 계획을 작성하는 중…",
+    aiLoadingPlanExecuting: "계획을 실행하는 중…",
+    aiModeSwitched: (mode: string) => `${mode}(으)로 전환됨`,
+    aiCancelRequest: "취소",
+    aiRequestTimeout:
+      "요청 시간이 초과되었습니다. 네트워크 또는 AI 설정을 확인한 뒤 다시 시도하세요.",
+    aiRequestCancelled: "요청이 취소되었습니다.",
     aiError: "AI 요청 실패",
     aiNotConfigured:
       "API 키가 설정되지 않았습니다. 현재 이력서 구조는 읽을 수 있지만 모델을 호출하려면 AI 제공업체와 API 키를 먼저 설정해야 합니다.",
+    aiEditParseFailed:
+      "모델 응답을 이력서 수정으로 파싱할 수 없습니다. 다시 시도하거나 요청을 바꿔 보세요.",
+    aiEditNoChanges: "유효한 이력서 수정이 생성되지 않았습니다.",
     aiModes: {
       chat: "대화",
       edit: "편집",
@@ -617,9 +654,22 @@ export const dictionaries = {
     aiPlanReview: "Plan pendiente de revisión",
     aiExecutePlan: "Ejecutar pasos seleccionados",
     aiCancelPlan: "Cancelar plan",
+    aiLoadingChat: "Pensando…",
+    aiLoadingEditAnalyzing: "Analizando currículum y solicitud…",
+    aiLoadingEditApplying: "Aplicando cambios estructurados…",
+    aiLoadingPlanDrafting: "Generando plan de ejecución…",
+    aiLoadingPlanExecuting: "Ejecutando plan…",
+    aiModeSwitched: (mode: string) => `Cambiado a ${mode}`,
+    aiCancelRequest: "Cancelar",
+    aiRequestTimeout:
+      "La solicitud expiró. Comprueba la red o la configuración de IA e inténtalo de nuevo.",
+    aiRequestCancelled: "Solicitud cancelada.",
     aiError: "Error en la solicitud de IA",
     aiNotConfigured:
       "La clave de API no está configurada. Puedo leer la estructura actual del currículum, pero se necesita un proveedor de IA y una clave de API para llamar a un modelo.",
+    aiEditParseFailed:
+      "No se pudo interpretar la respuesta del modelo como cambios en el currículum. Inténtalo de nuevo.",
+    aiEditNoChanges: "No se generaron cambios válidos en el currículum.",
     aiModes: {
       chat: "Chat",
       edit: "Editar",
@@ -778,9 +828,22 @@ export const dictionaries = {
     aiPlanReview: "確認待ちの計画",
     aiExecutePlan: "選択した手順を実行",
     aiCancelPlan: "計画をキャンセル",
+    aiLoadingChat: "考え中…",
+    aiLoadingEditAnalyzing: "履歴書とリクエストを分析しています…",
+    aiLoadingEditApplying: "構造化された編集を適用しています…",
+    aiLoadingPlanDrafting: "実行計画を作成しています…",
+    aiLoadingPlanExecuting: "計画を実行しています…",
+    aiModeSwitched: (mode: string) => `${mode}に切り替えました`,
+    aiCancelRequest: "キャンセル",
+    aiRequestTimeout:
+      "リクエストがタイムアウトしました。ネットワークまたは AI 設定を確認して再試行してください。",
+    aiRequestCancelled: "リクエストをキャンセルしました。",
     aiError: "AI リクエストに失敗しました",
     aiNotConfigured:
       "API キーが設定されていません。現在の履歴書構造は読み取れますが、モデルを呼び出すには AI プロバイダーと API キーの設定が必要です。",
+    aiEditParseFailed:
+      "モデルの応答を履歴書の編集として解析できませんでした。もう一度お試しください。",
+    aiEditNoChanges: "有効な履歴書の変更は生成されませんでした。",
     aiModes: {
       chat: "チャット",
       edit: "編集",
@@ -935,9 +998,22 @@ export const dictionaries = {
     aiPlanReview: "План ожидает подтверждения",
     aiExecutePlan: "Выполнить выбранные шаги",
     aiCancelPlan: "Отменить план",
+    aiLoadingChat: "Думаю…",
+    aiLoadingEditAnalyzing: "Анализ резюме и запроса…",
+    aiLoadingEditApplying: "Применение структурированных правок…",
+    aiLoadingPlanDrafting: "Составление плана выполнения…",
+    aiLoadingPlanExecuting: "Выполнение плана…",
+    aiModeSwitched: (mode: string) => `Переключено на ${mode}`,
+    aiCancelRequest: "Отмена",
+    aiRequestTimeout:
+      "Время ожидания запроса истекло. Проверьте сеть или настройки AI и повторите попытку.",
+    aiRequestCancelled: "Запрос отменён.",
     aiError: "Ошибка AI-запроса",
     aiNotConfigured:
       "API-ключ не настроен. Я могу читать структуру резюме, но для вызова модели нужно настроить AI-провайдера и API-ключ.",
+    aiEditParseFailed:
+      "Не удалось разобрать ответ модели как правки резюме. Повторите попытку.",
+    aiEditNoChanges: "Действительные правки резюме не были сгенерированы.",
     aiModes: {
       chat: "Чат",
       edit: "Редактирование",
@@ -1092,9 +1168,22 @@ export const dictionaries = {
     aiPlanReview: "Plan wartet auf Bestätigung",
     aiExecutePlan: "Ausgewählte Schritte ausführen",
     aiCancelPlan: "Plan abbrechen",
+    aiLoadingChat: "Denke nach…",
+    aiLoadingEditAnalyzing: "Lebenslauf und Anfrage werden analysiert…",
+    aiLoadingEditApplying: "Strukturierte Änderungen werden angewendet…",
+    aiLoadingPlanDrafting: "Ausführungsplan wird erstellt…",
+    aiLoadingPlanExecuting: "Plan wird ausgeführt…",
+    aiModeSwitched: (mode: string) => `Gewechselt zu ${mode}`,
+    aiCancelRequest: "Abbrechen",
+    aiRequestTimeout:
+      "Zeitüberschreitung der Anfrage. Bitte Netzwerk oder KI-Einstellungen prüfen und erneut versuchen.",
+    aiRequestCancelled: "Anfrage abgebrochen.",
     aiError: "KI-Anfrage fehlgeschlagen",
     aiNotConfigured:
       "Der API-Schlüssel ist nicht konfiguriert. Ich kann die Lebenslaufstruktur lesen, aber für den Modellaufruf müssen KI-Anbieter und API-Schlüssel eingerichtet sein.",
+    aiEditParseFailed:
+      "Die Modellantwort konnte nicht als Lebenslaufänderungen gelesen werden. Bitte erneut versuchen.",
+    aiEditNoChanges: "Es wurden keine gültigen Lebenslaufänderungen erzeugt.",
     aiModes: {
       chat: "Chat",
       edit: "Bearbeiten",
@@ -1249,9 +1338,22 @@ export const dictionaries = {
     aiPlanReview: "Plan en attente de validation",
     aiExecutePlan: "Exécuter les étapes sélectionnées",
     aiCancelPlan: "Annuler le plan",
+    aiLoadingChat: "Réflexion en cours…",
+    aiLoadingEditAnalyzing: "Analyse du CV et de la demande…",
+    aiLoadingEditApplying: "Application des modifications structurées…",
+    aiLoadingPlanDrafting: "Élaboration du plan d'exécution…",
+    aiLoadingPlanExecuting: "Exécution du plan…",
+    aiModeSwitched: (mode: string) => `Passé à ${mode}`,
+    aiCancelRequest: "Annuler",
+    aiRequestTimeout:
+      "Délai de la requête dépassé. Vérifiez le réseau ou la configuration IA, puis réessayez.",
+    aiRequestCancelled: "Requête annulée.",
     aiError: "Échec de la requête IA",
     aiNotConfigured:
       "La clé API n'est pas configurée. Je peux lire la structure du CV, mais un fournisseur IA et une clé API sont nécessaires pour appeler un modèle.",
+    aiEditParseFailed:
+      "La réponse du modèle n'a pas pu être interprétée comme des modifications du CV. Réessayez.",
+    aiEditNoChanges: "Aucune modification valide du CV n'a été générée.",
     aiModes: {
       chat: "Chat",
       edit: "Éditer",

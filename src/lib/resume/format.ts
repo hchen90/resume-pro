@@ -22,12 +22,56 @@ export function splitLines(value?: string) {
     .filter(Boolean);
 }
 
+export function hasMeaningfulItem(item: ResumeNodeItem) {
+  return Boolean(
+    item.title?.trim() ||
+      item.subtitle?.trim() ||
+      item.description?.trim() ||
+      item.startDate?.trim() ||
+      item.endDate?.trim() ||
+      item.location?.trim(),
+  );
+}
+
+export function hasMeaningfulItems(items: ResumeNodeItem[] | undefined) {
+  return (items ?? []).some(hasMeaningfulItem);
+}
+
 export function nodeItems(node: ResumeNode): ResumeNodeItem[] {
   if (!isMultiItemNodeType(node.type)) {
     return [];
   }
 
-  return node.content.items?.length ? node.content.items : bodyToLegacyItem(node);
+  const items = node.content.items ?? [];
+  if (hasMeaningfulItems(items)) {
+    return items;
+  }
+
+  return bodyToLegacyItem(node);
+}
+
+export function normalizeMultiItemNode(node: ResumeNode): ResumeNode {
+  if (!isMultiItemNodeType(node.type)) {
+    return node;
+  }
+
+  if (hasMeaningfulItems(node.content.items)) {
+    return node;
+  }
+
+  const migratedItems = bodyToLegacyItem(node);
+  if (migratedItems.length === 0) {
+    return node;
+  }
+
+  return {
+    ...node,
+    content: {
+      ...node.content,
+      items: migratedItems,
+      body: undefined,
+    },
+  };
 }
 
 export function itemDateRange(item: ResumeNodeItem) {
