@@ -18,6 +18,7 @@ export function systemPromptForMode(mode: AiMode, locale: Locale) {
 重要：update_node 的 content 只能包含用户要求修改的字段。不要把未修改字段补成空字符串、空数组或占位值。
 content.body 和 items[].description 支持 Markdown，可在适合时使用加粗、列表、链接等格式。
 experience、project、education 节点必须使用 content.items 数组写入条目，填写 title、subtitle、startDate、endDate、location、description 等字段；不要把这些节点的正文写到 content.body，也不要发送空的 items 占位数组。
+添加新条目时，items 里只放新增条目，不要复用已有条目的 id，系统会自动追加；修改已有条目时必须使用上下文里该条目的 id。
 summary、custom 等单段文本节点使用 content.body。
 JSON 格式：
 {
@@ -119,6 +120,7 @@ ${steps}
 
 请只执行这些已确认步骤，生成必要的结构化 patches。不要执行未列出的改动，不要顺手优化其他节点。
 experience、project、education 节点必须使用 content.items 写入条目；不要把正文写到 content.body，也不要发送空的 items 占位数组。
+添加新条目时只发送新增条目且不要复用已有 id；修改已有条目时必须带上该条目的 id。
 
 当前简历上下文：
 ${input.resumeContext}`;

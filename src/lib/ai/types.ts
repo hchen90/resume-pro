@@ -10,6 +10,7 @@ export type AiMessage = {
   role: "user" | "assistant" | "system";
   content: string;
   aiMode?: AiMode;
+  isError?: boolean;
 };
 
 export type AiResponse = {
@@ -17,4 +18,5 @@ export type AiResponse = {
   patches: unknown[];
   plan?: AiPlan;
   resume?: ResumeWithNodes;
+  error?: boolean;
 };

@@ -121,6 +121,74 @@ describe("applyResumePatches", () => {
     );
   });
 
+  it("appends a new project item instead of replacing existing items", () => {
+    const resume = sampleResume();
+    const project = resume.nodes.find((node) => node.type === "project");
+
+    expect(project).toBeDefined();
+
+    const existingItem = project!.content.items?.[0];
+    expect(existingItem).toBeDefined();
+
+    const updated = applyResumePatches(resume, [
+      {
+        op: "update_node",
+        nodeId: project!.id,
+        content: {
+          items: [
+            {
+              id: crypto.randomUUID(),
+              title: "AI 测试项目",
+              subtitle: "独立开发",
+              startDate: "2024-01",
+              endDate: "2024-06",
+              location: "远程",
+              description: "- 构建 LLM 工作流\n- 用于验证 AI 编辑能力",
+            },
+          ],
+        },
+      },
+    ]);
+    const updatedProject = updated.nodes.find((node) => node.id === project!.id);
+
+    expect(updatedProject?.content.items).toHaveLength(2);
+    expect(updatedProject?.content.items?.[0]?.id).toBe(existingItem!.id);
+    expect(updatedProject?.content.items?.[1]?.title).toBe("AI 测试项目");
+  });
+
+  it("updates an existing item when the patch reuses its id", () => {
+    const resume = sampleResume();
+    const project = resume.nodes.find((node) => node.type === "project");
+
+    expect(project).toBeDefined();
+
+    const existingItem = project!.content.items?.[0];
+    expect(existingItem).toBeDefined();
+
+    const updated = applyResumePatches(resume, [
+      {
+        op: "update_node",
+        nodeId: project!.id,
+        content: {
+          items: [
+            {
+              id: existingItem!.id,
+              title: "智能客服系统开发",
+              description: "- 使用 NLP 提升自动回复准确率",
+            },
+          ],
+        },
+      },
+    ]);
+    const updatedProject = updated.nodes.find((node) => node.id === project!.id);
+
+    expect(updatedProject?.content.items).toHaveLength(1);
+    expect(updatedProject?.content.items?.[0]?.title).toBe("智能客服系统开发");
+    expect(updatedProject?.content.items?.[0]?.description).toBe(
+      "- 使用 NLP 提升自动回复准确率",
+    );
+  });
+
   it("does not let empty AI patch fields clear existing profile fields", () => {
     const resume = sampleResume();
     const profile = resume.nodes.find((node) => node.type === "profile");

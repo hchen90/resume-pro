@@ -208,8 +208,15 @@ export function AiPanel({
       const payload = (await response.json()) as AiResponse;
       setMessages((current) => [
         ...current,
-        { role: "assistant", content: payload.message },
+        {
+          role: "assistant",
+          content: payload.message,
+          isError: payload.error,
+        },
       ]);
+      if (payload.error) {
+        return;
+      }
       if (payload.plan) {
         setPendingPlan({
           originalMessage: userMessage.content,
@@ -229,6 +236,7 @@ export function AiPanel({
         {
           role: "assistant",
           content: formatRequestError(error),
+          isError: true,
         },
       ]);
     } finally {
@@ -276,8 +284,15 @@ export function AiPanel({
       const payload = (await response.json()) as AiResponse;
       setMessages((current) => [
         ...current,
-        { role: "assistant", content: payload.message },
+        {
+          role: "assistant",
+          content: payload.message,
+          isError: payload.error,
+        },
       ]);
+      if (payload.error) {
+        return;
+      }
       setPendingPlan(null);
       setSelectedPlanStepIds([]);
 
@@ -290,6 +305,7 @@ export function AiPanel({
         {
           role: "assistant",
           content: formatRequestError(error),
+          isError: true,
         },
       ]);
     } finally {
@@ -384,13 +400,18 @@ export function AiPanel({
             );
           }
 
+          const isErrorMessage =
+            message.role === "assistant" && message.isError === true;
+
           return (
             <div
               key={`${message.role}-${index}`}
               className={`rounded-lg px-3 py-2 text-sm leading-6 ${
                 message.role === "user"
                   ? "ml-8 bg-[var(--app-accent-soft)] text-[var(--app-text)] ring-1 ring-[var(--app-accent-border)]"
-                  : "mr-8 bg-[var(--app-surface)] text-[var(--app-text)] ring-1 ring-[var(--app-border)]"
+                  : isErrorMessage
+                    ? "mr-8 bg-red-50 text-red-800 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-200 dark:ring-red-900/60"
+                    : "mr-8 bg-[var(--app-surface)] text-[var(--app-text)] ring-1 ring-[var(--app-border)]"
               }`}
             >
               {message.content}

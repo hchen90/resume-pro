@@ -1,10 +1,15 @@
 import { z } from "zod";
 
 import { createNode, isMultiItemNodeType } from "@/lib/resume/defaults";
-import { hasMeaningfulItems, normalizeMultiItemNode } from "@/lib/resume/format";
+import {
+  hasMeaningfulItems,
+  nodeItems,
+  normalizeMultiItemNode,
+} from "@/lib/resume/format";
 import type {
   ResumeNode,
   ResumeNodeContent,
+  ResumeNodeItem,
   ResumeSaveInput,
   ResumeWithNodes,
 } from "@/lib/resume/types";
@@ -393,15 +398,83 @@ function mergeNodePatch(
     enabled?: boolean;
   },
 ): ResumeNode {
+  const patchContent = withoutEmptyPatchValues(patch.content);
+  const { items: patchItems, ...otherPatchContent } = patchContent;
+  let content: ResumeNodeContent = {
+    ...node.content,
+    ...otherPatchContent,
+  };
+
+  if (isMultiItemNodeType(node.type) && patchItems?.length) {
+    content = {
+      ...content,
+      items: mergeItemsPatch(nodeItems(node), patchItems),
+      body: undefined,
+    };
+  }
+
   return normalizeMultiItemNode({
     ...node,
     title: patch.title ?? node.title,
-    content: {
-      ...node.content,
-      ...withoutEmptyPatchValues(patch.content),
-    },
+    content,
     enabled: patch.enabled ?? node.enabled,
   });
+}
+
+function mergeItemsPatch(
+  existingItems: ResumeNodeItem[],
+  patchItems: ResumeNodeItem[],
+): ResumeNodeItem[] {
+  const merged = existingItems.map((item) => ({ ...item }));
+
+  for (const patchItem of patchItems) {
+    const patchId =
+      typeof patchItem.id === "string" && patchItem.id.trim()
+        ? patchItem.id.trim()
+        : crypto.randomUUID();
+    const index = merged.findIndex((item) => item.id === patchId);
+
+    if (index >= 0) {
+      merged[index] = mergeItemPatch(merged[index], patchItem);
+      continue;
+    }
+
+    merged.push({
+      id: patchId,
+      title: patchItem.title ?? "",
+      ...withoutEmptyItemPatchValues(patchItem),
+    });
+  }
+
+  return merged;
+}
+
+function mergeItemPatch(
+  existing: ResumeNodeItem,
+  patch: ResumeNodeItem,
+): ResumeNodeItem {
+  return {
+    ...existing,
+    ...withoutEmptyItemPatchValues(patch),
+    id: existing.id,
+    title: patch.title?.trim() ? patch.title : existing.title,
+  };
+}
+
+function withoutEmptyItemPatchValues(patch: Partial<ResumeNodeItem>) {
+  return Object.fromEntries(
+    Object.entries(patch).filter(([key, value]) => {
+      if (key === "id" || key === "title") {
+        return false;
+      }
+
+      if (typeof value === "string") {
+        return value.trim().length > 0;
+      }
+
+      return value !== undefined;
+    }),
+  ) as Partial<ResumeNodeItem>;
 }
 
 function withoutEmptyPatchValues(content?: ResumeNodeContent) {

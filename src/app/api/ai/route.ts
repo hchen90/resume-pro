@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { summarizeResume } from "@/lib/ai/context";
+import { invokeChatModel } from "@/lib/ai/invoke";
 import { createChatModel, hasAiConfiguration } from "@/lib/ai/model";
 import {
   aiPlanResponseSchema,
@@ -68,18 +69,27 @@ export async function POST(request: Request) {
         });
       }
 
-      const result = await model.invoke([
-        { role: "system", content: systemPromptForMode("edit", locale) },
+      const result = await invokeChatModel(
+        model,
+        [
+          { role: "system", content: systemPromptForMode("edit", locale) },
+          {
+            role: "user",
+            content: approvedPlanExecutionPrompt({
+              originalMessage: input.message,
+              planSummary: input.plan.summary,
+              steps: input.plan.steps,
+              resumeContext: summarizeResume(resume, input.selectedNodeId),
+            }),
+          },
+        ],
         {
-          role: "user",
-          content: approvedPlanExecutionPrompt({
-            originalMessage: input.message,
-            planSummary: input.plan.summary,
-            steps: input.plan.steps,
-            resumeContext: summarizeResume(resume, input.selectedNodeId),
-          }),
+          label: "plan:execute",
+          resumeId: input.resumeId,
+          mode: input.mode,
+          action: input.action,
         },
-      ]);
+      );
 
       return applyEditResponse({
         content: stringifyModelContent(result.content),
@@ -94,20 +104,29 @@ export async function POST(request: Request) {
         ? (input.messages ?? []).slice(-MAX_CHAT_HISTORY)
         : [];
 
-    const result = await model.invoke([
-      { role: "system", content: systemPromptForMode(input.mode, locale) },
-      ...chatHistory.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
+    const result = await invokeChatModel(
+      model,
+      [
+        { role: "system", content: systemPromptForMode(input.mode, locale) },
+        ...chatHistory.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+        {
+          role: "user",
+          content: userPrompt({
+            message: input.message,
+            resumeContext: summarizeResume(resume, input.selectedNodeId),
+          }),
+        },
+      ],
       {
-        role: "user",
-        content: userPrompt({
-          message: input.message,
-          resumeContext: summarizeResume(resume, input.selectedNodeId),
-        }),
+        label: input.mode,
+        resumeId: input.resumeId,
+        mode: input.mode,
+        action: input.action,
       },
-    ]);
+    );
     const content = stringifyModelContent(result.content);
 
     if (input.mode === "plan") {
@@ -133,12 +152,14 @@ export async function POST(request: Request) {
       parseErrorMessage: t.aiEditParseFailed,
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? `${dictionaries[locale].aiError}: ${error.message}`
-        : dictionaries[locale].aiError;
+    const detail =
+      error instanceof Error ? error.message : dictionaries[locale].aiError;
 
-    return NextResponse.json({ message, patches: [] });
+    return NextResponse.json({
+      message: `${dictionaries[locale].aiError}: ${detail}`,
+      patches: [],
+      error: true,
+    });
   }
 }
 

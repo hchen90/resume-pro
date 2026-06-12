@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { summarizeResume } from "@/lib/ai/context";
+import { invokeChatModel } from "@/lib/ai/invoke";
 import { createChatModel, hasAiConfiguration } from "@/lib/ai/model";
 import { extractJsonResponse } from "@/lib/ai/patch";
 import { getJobDescription } from "@/lib/db/job-description-repository";
@@ -48,29 +49,36 @@ export async function POST(request: Request) {
   }
 
   const model = createChatModel();
-  const result = await model.invoke([
+  const result = await invokeChatModel(
+    model,
+    [
+      {
+        role: "system",
+        content: [
+          "你是一个严格的招聘岗位匹配度评估助手。",
+          "你会读取 JD 和结构化简历，只基于已有事实评分，不要编造经历。",
+          "评分使用 0 到 10 的一位小数，10.0 表示高度匹配。",
+          `除非用户明确要求使用其他语言，否则请使用 ${languageName(locale)} 回复。`,
+          "你必须只返回 JSON，不要返回 Markdown。",
+          'JSON 格式：{"score":8.2,"summary":"一句总评","strengths":["优势"],"gaps":["差距"],"suggestions":["建议"]}',
+        ].join("\n"),
+      },
+      {
+        role: "user",
+        content: [
+          `JD 标题：${jobDescription.title}`,
+          "JD 内容：",
+          jobDescription.content,
+          "当前简历上下文：",
+          summarizeResume(resume),
+        ].join("\n\n"),
+      },
+    ],
     {
-      role: "system",
-      content: [
-        "你是一个严格的招聘岗位匹配度评估助手。",
-        "你会读取 JD 和结构化简历，只基于已有事实评分，不要编造经历。",
-        "评分使用 0 到 10 的一位小数，10.0 表示高度匹配。",
-        `除非用户明确要求使用其他语言，否则请使用 ${languageName(locale)} 回复。`,
-        "你必须只返回 JSON，不要返回 Markdown。",
-        'JSON 格式：{"score":8.2,"summary":"一句总评","strengths":["优势"],"gaps":["差距"],"suggestions":["建议"]}',
-      ].join("\n"),
+      label: "job-match",
+      resumeId: input.resumeId,
     },
-    {
-      role: "user",
-      content: [
-        `JD 标题：${jobDescription.title}`,
-        "JD 内容：",
-        jobDescription.content,
-        "当前简历上下文：",
-        summarizeResume(resume),
-      ].join("\n\n"),
-    },
-  ]);
+  );
 
   const content = stringifyModelContent(result.content);
   const parsed = jobMatchResultSchema.parse(
