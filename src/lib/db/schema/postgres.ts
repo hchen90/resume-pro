@@ -34,3 +34,15 @@ export const jobDescriptions = pgTable(
   },
   (table) => [index("job_descriptions_updated_idx").on(table.updatedAt)],
 );
+
+export const aiChatSessions = pgTable("ai_chat_sessions", {
+  resumeId: text("resume_id")
+    .primaryKey()
+    .references(() => resumes.id, { onDelete: "cascade" }),
+  mode: text("mode").notNull().default("chat"),
+  messages: text("messages").notNull(),
+  summary: text("summary"),
+  pendingPlan: text("pending_plan"),
+  selectedPlanStepIds: text("selected_plan_step_ids").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});

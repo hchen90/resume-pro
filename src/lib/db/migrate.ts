@@ -49,6 +49,16 @@ export async function ensureDatabase() {
 
       CREATE INDEX IF NOT EXISTS job_descriptions_updated_idx
       ON job_descriptions (updated_at);
+
+      CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+        resume_id TEXT PRIMARY KEY REFERENCES resumes(id) ON DELETE CASCADE,
+        mode TEXT NOT NULL DEFAULT 'chat',
+        messages TEXT NOT NULL,
+        summary TEXT,
+        pending_plan TEXT,
+        selected_plan_step_ids TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
     `);
 
     try {
@@ -102,6 +112,17 @@ export async function ensureDatabase() {
     await client.db.execute(sql`
       ALTER TABLE resumes
       ADD COLUMN IF NOT EXISTS font_preset TEXT NOT NULL DEFAULT 'sans';
+    `);
+    await client.db.execute(sql`
+      CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+        resume_id TEXT PRIMARY KEY REFERENCES resumes(id) ON DELETE CASCADE,
+        mode TEXT NOT NULL DEFAULT 'chat',
+        messages TEXT NOT NULL,
+        summary TEXT,
+        pending_plan TEXT,
+        selected_plan_step_ids TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
     `);
   }
 

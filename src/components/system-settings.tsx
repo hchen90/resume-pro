@@ -14,6 +14,7 @@ type ElectronAiConfig = {
   aiApiUrl: string;
   aiApiKey: string;
   aiApiModel: string;
+  aiSummaryModel: string;
 };
 
 type SystemSettingsProps = {
@@ -29,6 +30,8 @@ type SystemSettingsProps = {
     aiApiUrl: string;
     aiApiKey: string;
     aiApiModel: string;
+    aiSummaryModel: string;
+    aiSummaryModelHint: string;
     aiCustomApiUrl: string;
     aiCustomProvider: string;
     saveAiSettings: string;
@@ -87,6 +90,7 @@ export function SystemSettings({
       aiApiUrl: "",
       aiApiKey: "",
       aiApiModel: "",
+      aiSummaryModel: "",
     },
   );
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">(
@@ -270,6 +274,20 @@ export function SystemSettings({
                   }))
                 }
                 className="mt-2 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-muted-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
+              />
+            </label>
+            <label className="mt-3 block text-xs font-medium text-[var(--app-muted)]">
+              {labels.aiSummaryModel}
+              <input
+                value={aiConfig.aiSummaryModel}
+                onChange={(event) =>
+                  setAiConfig((current) => ({
+                    ...current,
+                    aiSummaryModel: event.target.value,
+                  }))
+                }
+                placeholder={labels.aiSummaryModelHint}
+                className="mt-2 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-muted-surface)] px-3 py-2 text-sm text-[var(--app-text)] outline-none placeholder:text-[var(--app-muted)] focus:border-[var(--app-accent)]"
               />
             </label>
 

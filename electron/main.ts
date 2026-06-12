@@ -131,6 +131,10 @@ SQLITE_PATH=${path.join(configDir, "resume-pro.sqlite")}
 AI_API_URL=https://api.openai.com/v1
 AI_API_KEY=
 AI_API_MODEL=gpt-4o-mini
+AI_SUMMARY_MODEL=
+AI_HISTORY_MAX_MESSAGES=50
+AI_HISTORY_SUMMARIZE_ABOVE=30
+AI_HISTORY_CONTEXT_MESSAGES=20
 
 # Runtime target
 APP_TARGET=electron

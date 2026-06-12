@@ -9,12 +9,14 @@ export type ElectronAiConfig = {
   aiApiUrl: string;
   aiApiKey: string;
   aiApiModel: string;
+  aiSummaryModel: string;
 };
 
 const aiEnvKeys = {
   aiApiUrl: "AI_API_URL",
   aiApiKey: "AI_API_KEY",
   aiApiModel: "AI_API_MODEL",
+  aiSummaryModel: "AI_SUMMARY_MODEL",
 } as const;
 
 export function isElectronRuntime() {
@@ -29,6 +31,8 @@ export function readElectronAiConfig(): ElectronAiConfig {
     aiApiUrl: values.AI_API_URL ?? process.env.AI_API_URL ?? "https://api.openai.com/v1",
     aiApiKey: values.AI_API_KEY ?? process.env.AI_API_KEY ?? "",
     aiApiModel: values.AI_API_MODEL ?? process.env.AI_API_MODEL ?? "gpt-4o-mini",
+    aiSummaryModel:
+      values.AI_SUMMARY_MODEL ?? process.env.AI_SUMMARY_MODEL ?? "",
   };
 }
 
@@ -39,6 +43,7 @@ export function updateElectronAiConfig(config: ElectronAiConfig) {
     [aiEnvKeys.aiApiUrl]: config.aiApiUrl,
     [aiEnvKeys.aiApiKey]: config.aiApiKey,
     [aiEnvKeys.aiApiModel]: config.aiApiModel,
+    [aiEnvKeys.aiSummaryModel]: config.aiSummaryModel,
   });
 
   fs.writeFileSync(envPath, updated, { mode: 0o600 });
@@ -72,6 +77,12 @@ SQLITE_PATH=${path.join(configDir, "resume-pro.sqlite")}
 AI_API_URL=https://api.openai.com/v1
 AI_API_KEY=
 AI_API_MODEL=gpt-4o-mini
+AI_SUMMARY_MODEL=
+
+# AI chat history
+AI_HISTORY_MAX_MESSAGES=50
+AI_HISTORY_SUMMARIZE_ABOVE=30
+AI_HISTORY_CONTEXT_MESSAGES=20
 
 # Runtime target
 APP_TARGET=electron

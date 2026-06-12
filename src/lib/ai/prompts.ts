@@ -91,6 +91,23 @@ ${input.message}
 ${input.resumeContext}`;
 }
 
+export function chatHistorySummarizationPrompt(input: {
+  existingSummary: string | null;
+  locale: Locale;
+}) {
+  const language = languageName(input.locale);
+
+  return [
+    "You summarize resume-assistant chat history for long-running conversations.",
+    "Preserve user goals, constraints, decisions, rejected ideas, and concrete resume feedback.",
+    "Do not invent facts. Keep the summary concise and actionable.",
+    `Write the summary in ${language}.`,
+    input.existingSummary
+      ? "Merge the existing summary with the new transcript. Return one updated summary only."
+      : "Return a single summary paragraph.",
+  ].join("\n");
+}
+
 export function approvedPlanExecutionPrompt(input: {
   originalMessage: string;
   planSummary: string;

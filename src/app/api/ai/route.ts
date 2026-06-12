@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { resolveAssistantHistoryConfig } from "@/lib/ai/assistant-history-config";
 import { summarizeResume } from "@/lib/ai/context";
 import { invokeChatModel } from "@/lib/ai/invoke";
 import { createChatModel, hasAiConfiguration } from "@/lib/ai/model";
@@ -17,12 +18,11 @@ import {
   userPrompt,
 } from "@/lib/ai/prompts";
 import { aiModes } from "@/lib/ai/types";
+import { getAiChatSession } from "@/lib/db/ai-chat-repository";
 import { getResume, saveResume } from "@/lib/db/resume-repository";
 import { dictionaries, locales, resolveLocale } from "@/lib/i18n";
 
 export const runtime = "nodejs";
-
-const MAX_CHAT_HISTORY = 20;
 
 const aiMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -99,15 +99,30 @@ export async function POST(request: Request) {
       });
     }
 
+    const storedChatSession =
+      input.mode === "chat"
+        ? await getAiChatSession(input.resumeId, t.aiIntro)
+        : null;
+    const summaryPrefix =
+      storedChatSession?.summary && input.mode === "chat"
+        ? [
+            {
+              role: "user" as const,
+              content: `Earlier conversation summary:\n${storedChatSession.summary}`,
+            },
+          ]
+        : [];
+    const historyConfig = resolveAssistantHistoryConfig();
     const chatHistory =
       input.mode === "chat"
-        ? (input.messages ?? []).slice(-MAX_CHAT_HISTORY)
+        ? (input.messages ?? []).slice(-historyConfig.contextMessages)
         : [];
 
     const result = await invokeChatModel(
       model,
       [
         { role: "system", content: systemPromptForMode(input.mode, locale) },
+        ...summaryPrefix,
         ...chatHistory.map((message) => ({
           role: message.role,
           content: message.content,

@@ -12,7 +12,12 @@ import {
   LOADING_STATUS_INTERVAL_MS,
   type AiLoadingPhase,
 } from "@/lib/ai/loading-status";
-import type { AiPlan } from "@/lib/ai/patch";
+import {
+  createDefaultAiChatSession,
+  fetchAiChatSession,
+  saveAiChatSession,
+  type AiPendingPlan,
+} from "@/lib/ai-chat-history";
 import type { AiMessage, AiMode, AiResponse } from "@/lib/ai/types";
 import { dictionaries, type Locale } from "@/lib/i18n";
 import type { ResumeWithNodes } from "@/lib/resume/types";
@@ -23,15 +28,12 @@ type AiPanelProps = {
   resume: ResumeWithNodes;
   selectedNodeId: string;
   locale: Locale;
-  variant?: "default" | "floating";
+  variant?: "default" | "drawer";
   onCollapse: () => void;
   onResumeUpdated: (resume: ResumeWithNodes) => void;
 };
 
-type PendingPlan = {
-  originalMessage: string;
-  plan: AiPlan;
-};
+const CHAT_SAVE_DEBOUNCE_MS = 500;
 
 function buildChatHistory(messages: AiMessage[], introContent: string) {
   return messages
@@ -76,24 +78,25 @@ export function AiPanel({
   onResumeUpdated,
 }: AiPanelProps) {
   const t = dictionaries[locale];
-  const [mode, setMode] = useState<AiMode>("chat");
+  const intro = t.aiIntro;
+  const defaultSession = createDefaultAiChatSession(intro);
+  const [mode, setMode] = useState<AiMode>(defaultSession.mode);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<AiMessage[]>([
-    {
-      role: "assistant",
-      content: t.aiIntro,
-    },
-  ]);
+  const [messages, setMessages] = useState<AiMessage[]>(defaultSession.messages);
+  const [chatSummary, setChatSummary] = useState<string | null>(null);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<AiLoadingPhase>("chat");
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
-  const [pendingPlan, setPendingPlan] = useState<PendingPlan | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<AiPendingPlan | null>(null);
   const [selectedPlanStepIds, setSelectedPlanStepIds] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const requestControllerRef = useRef<ReturnType<
     typeof createAiRequestController
   > | null>(null);
   const requestCancelledRef = useRef(false);
+  const saveTimeoutRef = useRef<number | null>(null);
+  const sessionVersionRef = useRef(0);
 
   const loadingMessages = useMemo(
     () => getAiLoadingMessages(loadingPhase, t),
@@ -125,6 +128,95 @@ export function AiPanel({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, isLoading, loadingStatus]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const version = sessionVersionRef.current + 1;
+    sessionVersionRef.current = version;
+    setIsSessionLoading(true);
+
+    void fetchAiChatSession(resume.id, locale, intro)
+      .then((session) => {
+        if (cancelled || sessionVersionRef.current !== version) {
+          return;
+        }
+
+        setMode(session.mode);
+        setMessages(session.messages);
+        setPendingPlan(session.pendingPlan);
+        setSelectedPlanStepIds(session.selectedPlanStepIds);
+        setChatSummary(session.summary);
+      })
+      .catch(() => {
+        if (cancelled || sessionVersionRef.current !== version) {
+          return;
+        }
+
+        const fallback = createDefaultAiChatSession(intro);
+        setMode(fallback.mode);
+        setMessages(fallback.messages);
+        setPendingPlan(fallback.pendingPlan);
+        setSelectedPlanStepIds(fallback.selectedPlanStepIds);
+        setChatSummary(fallback.summary);
+      })
+      .finally(() => {
+        if (!cancelled && sessionVersionRef.current === version) {
+          setIsSessionLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resume.id, locale, intro]);
+
+  useEffect(() => {
+    if (isSessionLoading) {
+      return;
+    }
+
+    if (saveTimeoutRef.current !== null) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = window.setTimeout(() => {
+      void saveAiChatSession(
+        resume.id,
+        {
+          messages,
+          mode,
+          pendingPlan,
+          selectedPlanStepIds,
+        },
+        locale,
+        intro,
+      )
+        .then((session) => {
+          setChatSummary(session.summary);
+          if (session.messages.length !== messages.length) {
+            setMessages(session.messages);
+          }
+        })
+        .catch(() => {
+          /* keep local state; user can continue chatting */
+        });
+    }, CHAT_SAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (saveTimeoutRef.current !== null) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [
+    resume.id,
+    locale,
+    intro,
+    isSessionLoading,
+    messages,
+    mode,
+    pendingPlan,
+    selectedPlanStepIds,
+  ]);
 
   function beginAiRequest(requestMode: AiMode) {
     requestControllerRef.current?.dispose();
@@ -328,7 +420,7 @@ export function AiPanel({
   }
 
   const rootClassName =
-    variant === "floating"
+    variant === "drawer"
       ? "flex h-full min-h-0 min-w-0 flex-col p-4 text-[var(--app-text)]"
       : "flex min-h-[620px] min-w-0 flex-col rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 text-[var(--app-text)] shadow-sm";
 
@@ -363,7 +455,7 @@ export function AiPanel({
               title={t.collapseAi}
               aria-label={t.collapseAi}
             >
-              {variant === "floating" ? (
+              {variant === "drawer" ? (
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 16 16"
@@ -389,6 +481,16 @@ export function AiPanel({
       </div>
 
       <div className="mt-4 flex-1 space-y-3 overflow-y-auto rounded-lg border border-[var(--app-border)] bg-[var(--app-muted-surface)] p-3">
+        {chatSummary ? (
+          <div className="flex justify-center py-1">
+            <div className="max-w-full rounded-lg bg-[var(--app-surface)] px-3 py-2 text-xs leading-5 text-[var(--app-muted)] ring-1 ring-[var(--app-border)]">
+              <p className="font-semibold text-[var(--app-text)]">
+                {t.aiChatEarlierSummary}
+              </p>
+              <p className="mt-1 whitespace-pre-wrap">{chatSummary}</p>
+            </div>
+          </div>
+        ) : null}
         {messages.map((message, index) => {
           if (message.role === "system") {
             return (

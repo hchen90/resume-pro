@@ -2,21 +2,40 @@ import "server-only";
 
 import { ChatOpenAI } from "@langchain/openai";
 
+import {
+  resolveChatModelName,
+  resolveSummaryModelName,
+} from "@/lib/ai/model-config";
+
+export {
+  defaultChatModel,
+  resolveChatModelName,
+  resolveSummaryModelName,
+} from "@/lib/ai/model-config";
+
 export function hasAiConfiguration() {
   return Boolean(process.env.AI_API_KEY);
 }
 
-export function createChatModel() {
+function createConfiguredChatModel(model: string) {
   if (!process.env.AI_API_KEY) {
     throw new Error("AI_API_KEY is not configured.");
   }
 
   return new ChatOpenAI({
-    model: process.env.AI_API_MODEL ?? "gpt-4o-mini",
+    model,
     apiKey: process.env.AI_API_KEY,
     temperature: 0.3,
     configuration: process.env.AI_API_URL
       ? { baseURL: process.env.AI_API_URL }
       : undefined,
   });
+}
+
+export function createChatModel() {
+  return createConfiguredChatModel(resolveChatModelName());
+}
+
+export function createSummaryChatModel() {
+  return createConfiguredChatModel(resolveSummaryModelName());
 }

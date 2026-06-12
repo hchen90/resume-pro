@@ -23,6 +23,10 @@ Environment variables (or Electron `~/.resume-pro/.env`):
 - `AI_API_URL` — compatible API base URL
 - `AI_API_KEY` — when missing, AI endpoints return a friendly “not configured” message; core editing still works
 - `AI_API_MODEL` — default `gpt-4o-mini`
+- `AI_SUMMARY_MODEL` — optional; chat-history summarization model. Falls back to `AI_API_MODEL` when unset
+- `AI_HISTORY_MAX_MESSAGES` — max conversational messages stored per resume (default `50`)
+- `AI_HISTORY_SUMMARIZE_ABOVE` — summarize older turns when conversational count exceeds this (default `30`)
+- `AI_HISTORY_CONTEXT_MESSAGES` — recent turns kept after summarization and sent to the model (default `20`)
 
 On Electron, **System settings** + `POST /api/settings/ai` can update the local `.env` (see [electron.md](./electron.md)).
 

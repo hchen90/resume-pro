@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
@@ -12,13 +11,11 @@ import { createPortal } from "react-dom";
 
 import { AiPanel } from "@/components/resume/ai-panel";
 import {
-  clampHeight,
   clampWidth,
   getAiPanelLayoutServerSnapshot,
   getAiPanelLayoutSnapshot,
   patchAiPanelLayout,
   subscribeAiPanelLayout,
-  type AiPanelLayout,
 } from "@/lib/ai-panel-layout";
 import { dictionaries, type Locale } from "@/lib/i18n";
 import type { ResumeWithNodes } from "@/lib/resume/types";
@@ -69,18 +66,11 @@ export function AiFloatingAssistant({
   const isClient = useIsClient();
   const layout = useAiPanelLayout();
   const layoutRef = useRef(layout);
-  const resizeStartRef = useRef({ width: 0, height: 0, x: 0, y: 0 });
+  const resizeStartRef = useRef({ width: 0, x: 0 });
 
-  const persistLayout = useCallback((partial: Partial<AiPanelLayout>) => {
-    patchAiPanelLayout({ x: null, y: null, ...partial });
+  const setOpen = useCallback((open: boolean) => {
+    patchAiPanelLayout({ open });
   }, []);
-
-  const setOpen = useCallback(
-    (open: boolean) => {
-      persistLayout({ open });
-    },
-    [persistLayout],
-  );
 
   const handleResizePointerDown = useCallback(
     (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -91,23 +81,18 @@ export function AiFloatingAssistant({
       event.preventDefault();
       event.stopPropagation();
 
-      const current = layoutRef.current;
       resizeStartRef.current = {
-        width: current.width,
-        height: current.height,
+        width: layoutRef.current.width,
         x: event.clientX,
-        y: event.clientY,
       };
 
       const resizeHandle = event.currentTarget;
       event.currentTarget.setPointerCapture(event.pointerId);
 
       const handlePointerMove = (moveEvent: PointerEvent) => {
-        const deltaX = moveEvent.clientX - resizeStartRef.current.x;
-        const deltaY = moveEvent.clientY - resizeStartRef.current.y;
-        persistLayout({
-          width: clampWidth(resizeStartRef.current.width - deltaX),
-          height: clampHeight(resizeStartRef.current.height - deltaY),
+        const deltaX = resizeStartRef.current.x - moveEvent.clientX;
+        patchAiPanelLayout({
+          width: clampWidth(resizeStartRef.current.width + deltaX),
         });
       };
 
@@ -122,7 +107,7 @@ export function AiFloatingAssistant({
       window.addEventListener("pointerup", handlePointerUp);
       window.addEventListener("pointercancel", handlePointerUp);
     },
-    [persistLayout],
+    [],
   );
 
   useEffect(() => {
@@ -134,6 +119,9 @@ export function AiFloatingAssistant({
       return;
     }
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
@@ -141,77 +129,83 @@ export function AiFloatingAssistant({
     }
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [layout.open, setOpen]);
 
   useEffect(() => {
     function handleResize() {
-      const current = layoutRef.current;
-      persistLayout({
-        width: clampWidth(current.width),
-        height: clampHeight(current.height),
+      patchAiPanelLayout({
+        width: clampWidth(layoutRef.current.width),
       });
     }
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [persistLayout]);
+  }, []);
 
   if (!isClient) {
     return null;
   }
 
-  const panelStyle: CSSProperties = {
-    right: "1.5rem",
-    bottom: "5.5rem",
-    width: layout.width,
-    height: layout.height,
-  };
-
   return createPortal(
     <div className="no-print">
-      {!layout.open ? (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={`fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--app-primary)] text-white shadow-lg ring-2 ring-white/20 transition hover:bg-[var(--app-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--app-accent)] ${
+          layout.open
+            ? "pointer-events-none scale-90 opacity-0"
+            : "opacity-100"
+        }`}
+        title={t.expandAi}
+        aria-label={t.expandAi}
+        aria-hidden={layout.open}
+        tabIndex={layout.open ? -1 : 0}
+      >
+        <RobotIcon />
+      </button>
+
+      <div
+        className={`fixed inset-0 z-40 bg-black/20 transition-opacity duration-300 ${
+          layout.open
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+        onClick={() => setOpen(false)}
+        aria-hidden={!layout.open}
+      />
+
+      <aside
+        role="dialog"
+        aria-modal={layout.open}
+        aria-label={t.aiAssistant}
+        aria-hidden={!layout.open}
+        style={{ width: layout.width }}
+        className={`fixed inset-y-0 right-0 z-50 flex max-w-[min(100vw,640px)] flex-col border-l border-[var(--app-border)] bg-[var(--app-surface)] shadow-2xl transition-transform duration-300 ease-out ${
+          layout.open ? "translate-x-0" : "pointer-events-none translate-x-full"
+        }`}
+      >
         <button
           type="button"
-          onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--app-primary)] text-white shadow-lg ring-2 ring-white/20 transition hover:bg-[var(--app-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--app-accent)]"
-          title={t.expandAi}
-          aria-label={t.expandAi}
-        >
-          <RobotIcon />
-        </button>
-      ) : (
-        <div
-          style={panelStyle}
-          className="fixed z-50 flex max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-xl"
-        >
-          <button
-            type="button"
-            aria-label={t.aiResize}
-            onPointerDown={handleResizePointerDown}
-            className="absolute top-0 left-0 z-10 flex h-5 w-5 cursor-nw-resize items-start justify-start p-0.5 text-[var(--app-muted)] hover:text-[var(--app-text)]"
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 12 12"
-              className="h-3 w-3 rotate-180"
-              fill="currentColor"
-            >
-              <path d="M12 12H8V10h2V8h2v4ZM10 6H8V4h2v2ZM6 6H4V4h2v2Z" />
-            </svg>
-          </button>
-          <div className="relative min-h-0 flex-1">
-            <AiPanel
-              variant="floating"
-              resume={resume}
-              selectedNodeId={selectedNodeId}
-              locale={locale}
-              onCollapse={() => setOpen(false)}
-              onResumeUpdated={onResumeUpdated}
-            />
-          </div>
+          aria-label={t.aiResize}
+          onPointerDown={handleResizePointerDown}
+          className="absolute top-0 left-0 z-10 h-full w-1.5 cursor-ew-resize bg-transparent hover:bg-[var(--app-accent-soft)]"
+        />
+        <div className="relative min-h-0 flex-1">
+          <AiPanel
+            key={resume.id}
+            variant="drawer"
+            resume={resume}
+            selectedNodeId={selectedNodeId}
+            locale={locale}
+            onCollapse={() => setOpen(false)}
+            onResumeUpdated={onResumeUpdated}
+          />
         </div>
-      )}
+      </aside>
     </div>,
     document.body,
   );

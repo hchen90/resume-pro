@@ -17,6 +17,7 @@ const aiSettingsSchema = z.object({
     }),
   aiApiKey: z.string(),
   aiApiModel: z.string().trim().min(1),
+  aiSummaryModel: z.string(),
 });
 
 export async function PUT(request: Request) {

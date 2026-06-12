@@ -2,7 +2,7 @@ export const AI_PANEL_LAYOUT_KEY = "resume-pro.ai-floating-panel.v1";
 
 export const AI_PANEL_MIN_WIDTH = 320;
 export const AI_PANEL_MIN_HEIGHT = 400;
-export const AI_PANEL_DEFAULT_WIDTH = 380;
+export const AI_PANEL_DEFAULT_WIDTH = 400;
 
 export type AiPanelLayout = {
   open: boolean;
@@ -27,7 +27,7 @@ export function getDefaultHeight(viewportHeight?: number) {
 
 export function getMaxWidth(viewportWidth?: number) {
   const viewport = viewportWidth ?? getViewportSize().width;
-  return Math.min(560, viewport * 0.9);
+  return Math.min(640, Math.floor(viewport * 0.5));
 }
 
 export function getMaxHeight(viewportHeight?: number) {

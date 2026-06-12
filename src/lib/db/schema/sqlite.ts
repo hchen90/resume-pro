@@ -34,3 +34,17 @@ export const jobDescriptions = sqliteTable(
   },
   (table) => [index("job_descriptions_updated_idx").on(table.updatedAt)],
 );
+
+export const aiChatSessions = sqliteTable("ai_chat_sessions", {
+  resumeId: text("resume_id")
+    .primaryKey()
+    .references(() => resumes.id, { onDelete: "cascade" }),
+  mode: text("mode").notNull().default("chat"),
+  messages: text("messages", { mode: "json" }).notNull(),
+  summary: text("summary"),
+  pendingPlan: text("pending_plan", { mode: "json" }),
+  selectedPlanStepIds: text("selected_plan_step_ids", {
+    mode: "json",
+  }).notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
