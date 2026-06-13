@@ -77,7 +77,12 @@ jobs:
         run: npm ci
 
       - name: Package Electron app
-        run: npm run build:electron
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            ulimit -n 65536
+          fi
+          npm run build:electron
 
       - name: Upload packaged app
         uses: actions/upload-artifact@v4
