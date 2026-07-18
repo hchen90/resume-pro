@@ -105,14 +105,14 @@ The packaged app runs its own local Next.js server and stores its configuration 
 
 ## Docker
 
-Build and run the production image:
+Pull the published image from [GitHub Container Registry](https://github.com/hchen90/resume-pro/pkgs/container/resume-pro) and run it:
 
 ```bash
-docker build -t resume-pro .
+docker pull ghcr.io/hchen90/resume-pro
 docker run --rm -p 3000:3000 \
   --env-file .env \
   -v resume-pro-data:/app/data \
-  resume-pro
+  ghcr.io/hchen90/resume-pro
 ```
 
 ## Common Commands
