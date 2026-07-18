@@ -1,6 +1,6 @@
 appId: com.resumepro.desktop
 productName: Resume Pro
-asar: false
+asar: true
 directories:
   output: dist
 files:
