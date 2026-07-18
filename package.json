@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@agentscope-ai/agentscope": "0.0.13",
+    "@fission-ai/openspec": "^1.6.0",
     "@fontsource/lxgw-wenkai": "^5.2.5",
     "@fontsource/noto-sans": "^5.2.10",
     "@fontsource/noto-sans-jp": "^5.2.9",
