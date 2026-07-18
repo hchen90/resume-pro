@@ -19,7 +19,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@agentscope-ai/agentscope": "0.0.13",

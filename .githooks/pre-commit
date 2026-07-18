@@ -1,0 +1,25 @@
+#!/bin/sh
+# Runs Vitest on staged source changes. Mirrors the auto-run-tests skill:
+# - changes under src/lib/ai/** (excluding agentscope) -> coverage + threshold
+# - any other change under src/ -> unit tests
+# - nothing under src/ -> skip
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+
+src_changed=$(printf '%s\n' "$staged" | grep -E '^src/' || true)
+if [ -z "$src_changed" ]; then
+  exit 0
+fi
+
+ai_changed=$(printf '%s\n' "$src_changed" \
+  | grep -E '^src/lib/ai/' \
+  | grep -Ev '^src/lib/ai/agentscope/' || true)
+
+if [ -n "$ai_changed" ]; then
+  echo "pre-commit: src/lib/ai changed -> npm run test:coverage"
+  npm run test:coverage
+else
+  echo "pre-commit: src changed -> npm test"
+  npm test
+fi
