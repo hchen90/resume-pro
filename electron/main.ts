@@ -65,6 +65,7 @@ async function startProductionNextServer() {
   process.env.APP_TARGET = "electron";
   process.env.NEXT_PUBLIC_APP_TARGET = "electron";
   process.env.ELECTRON = "1";
+  process.env.RESUME_PRO_APP_ROOT = appRoot;
   process.env.HOSTNAME = productionHostname;
   process.env.PORT = String(port);
   process.env.RELEASE_NOTES_PATH ??= path.join(

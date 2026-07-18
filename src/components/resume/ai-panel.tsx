@@ -1,28 +1,99 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import {
   createAiRequestController,
   isAbortError,
 } from "@/lib/ai/client-request";
 import {
+  assistantMessageFromUiState,
+  createInitialAssistantUiState,
+  reduceAssistantStreamEvent,
+  type AssistantUiState,
+} from "@/lib/ai/client/reducer";
+import { readAssistantNdjsonStream } from "@/lib/ai/client/stream";
+import {
   getAiLoadingMessages,
   loadingPhaseForMode,
   LOADING_STATUS_INTERVAL_MS,
   type AiLoadingPhase,
 } from "@/lib/ai/loading-status";
+import type { PendingPatchProposal } from "@/lib/ai/protocol";
 import {
   createDefaultAiChatSession,
   fetchAiChatSession,
-  saveAiChatSession,
+  patchAiChatSession,
   type AiPendingPlan,
 } from "@/lib/ai-chat-history";
-import type { AiMessage, AiMode, AiResponse } from "@/lib/ai/types";
+import type { AiMessage, AiMode } from "@/lib/ai/types";
 import { dictionaries, type Locale } from "@/lib/i18n";
 import type { ResumeWithNodes } from "@/lib/resume/types";
 
 import { AiLoadingIndicator } from "./ai-loading-indicator";
+import { AiProposalReview } from "./ai-proposal-review";
+
+const assistantMarkdownComponents: Components = {
+  p: ({ children }) => <p className="my-1 first:mt-0 last:mb-0">{children}</p>,
+  h1: ({ children }) => (
+    <h1 className="mb-2 mt-3 text-base font-semibold first:mt-0">{children}</h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="mb-1 mt-3 text-sm font-semibold first:mt-0">{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mb-1 mt-2 text-sm font-semibold first:mt-0">{children}</h3>
+  ),
+  ul: ({ children }) => (
+    <ul className="my-1 list-disc space-y-0.5 pl-5">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-1 list-decimal space-y-0.5 pl-5">{children}</ol>
+  ),
+  li: ({ children }) => <li className="pl-0.5">{children}</li>,
+  blockquote: ({ children }) => (
+    <blockquote className="my-2 border-l-2 border-[var(--app-border)] pl-3 text-[var(--app-muted)]">
+      {children}
+    </blockquote>
+  ),
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="font-medium text-[var(--app-accent)] underline underline-offset-2"
+    >
+      {children}
+    </a>
+  ),
+  code: ({ children, className }) =>
+    className ? (
+      <code className={className}>{children}</code>
+    ) : (
+      <code className="rounded bg-[var(--app-muted-surface)] px-1 py-0.5 font-mono text-[0.85em]">
+        {children}
+      </code>
+    ),
+  pre: ({ children }) => (
+    <pre className="my-2 overflow-x-auto rounded-md bg-[var(--app-muted-surface)] p-3 font-mono text-xs leading-5">
+      {children}
+    </pre>
+  ),
+  hr: () => <hr className="my-3 border-[var(--app-border)]" />,
+};
+
+function AssistantMarkdown({ children }: { children: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={assistantMarkdownComponents}
+    >
+      {children}
+    </ReactMarkdown>
+  );
+}
 
 type AiPanelProps = {
   resume: ResumeWithNodes;
@@ -32,8 +103,6 @@ type AiPanelProps = {
   onCollapse: () => void;
   onResumeUpdated: (resume: ResumeWithNodes) => void;
 };
-
-const CHAT_SAVE_DEBOUNCE_MS = 500;
 
 function buildChatHistory(messages: AiMessage[], introContent: string) {
   return messages
@@ -84,19 +153,25 @@ export function AiPanel({
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<AiMessage[]>(defaultSession.messages);
   const [chatSummary, setChatSummary] = useState<string | null>(null);
+  const [sessionVersion, setSessionVersion] = useState(0);
   const [isSessionLoading, setIsSessionLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState<AiLoadingPhase>("chat");
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const [pendingPlan, setPendingPlan] = useState<AiPendingPlan | null>(null);
   const [selectedPlanStepIds, setSelectedPlanStepIds] = useState<string[]>([]);
+  const [pendingProposal, setPendingProposal] =
+    useState<PendingPatchProposal | null>(null);
+  const [streamState, setStreamState] = useState<AssistantUiState>(
+    createInitialAssistantUiState(),
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const requestControllerRef = useRef<ReturnType<
     typeof createAiRequestController
   > | null>(null);
   const requestCancelledRef = useRef(false);
-  const saveTimeoutRef = useRef<number | null>(null);
   const sessionVersionRef = useRef(0);
+  const uiStateSyncRef = useRef(0);
 
   const loadingMessages = useMemo(
     () => getAiLoadingMessages(loadingPhase, t),
@@ -127,7 +202,7 @@ export function AiPanel({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length, isLoading, loadingStatus]);
+  }, [messages.length, isLoading, loadingStatus, streamState.streamingText]);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,7 +220,9 @@ export function AiPanel({
         setMessages(session.messages);
         setPendingPlan(session.pendingPlan);
         setSelectedPlanStepIds(session.selectedPlanStepIds);
+        setPendingProposal(session.pendingProposal);
         setChatSummary(session.summary);
+        setSessionVersion(session.sessionVersion);
       })
       .catch(() => {
         if (cancelled || sessionVersionRef.current !== version) {
@@ -157,7 +234,9 @@ export function AiPanel({
         setMessages(fallback.messages);
         setPendingPlan(fallback.pendingPlan);
         setSelectedPlanStepIds(fallback.selectedPlanStepIds);
+        setPendingProposal(fallback.pendingProposal);
         setChatSummary(fallback.summary);
+        setSessionVersion(fallback.sessionVersion);
       })
       .finally(() => {
         if (!cancelled && sessionVersionRef.current === version) {
@@ -171,48 +250,46 @@ export function AiPanel({
   }, [resume.id, locale, intro]);
 
   useEffect(() => {
-    if (isSessionLoading) {
+    if (isSessionLoading || isLoading) {
       return;
     }
 
-    if (saveTimeoutRef.current !== null) {
-      window.clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = window.setTimeout(() => {
-      void saveAiChatSession(
+    const syncId = uiStateSyncRef.current + 1;
+    uiStateSyncRef.current = syncId;
+    const timer = window.setTimeout(() => {
+      void patchAiChatSession(
         resume.id,
         {
-          messages,
           mode,
           pendingPlan,
           selectedPlanStepIds,
+          sessionVersion,
         },
         locale,
         intro,
       )
         .then((session) => {
-          setChatSummary(session.summary);
-          if (session.messages.length !== messages.length) {
-            setMessages(session.messages);
+          if (uiStateSyncRef.current !== syncId) {
+            return;
           }
+          setSessionVersion(session.sessionVersion);
+          setChatSummary(session.summary);
+          setPendingProposal(session.pendingProposal);
         })
         .catch(() => {
-          /* keep local state; user can continue chatting */
+          /* keep local UI state */
         });
-    }, CHAT_SAVE_DEBOUNCE_MS);
+    }, 400);
 
-    return () => {
-      if (saveTimeoutRef.current !== null) {
-        window.clearTimeout(saveTimeoutRef.current);
-      }
-    };
+    return () => window.clearTimeout(timer);
+    // sessionVersion is intentionally omitted to avoid a sync loop after PUT.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     resume.id,
     locale,
     intro,
     isSessionLoading,
-    messages,
+    isLoading,
     mode,
     pendingPlan,
     selectedPlanStepIds,
@@ -236,6 +313,12 @@ export function AiPanel({
     requestControllerRef.current?.abort();
     finishAiRequest();
     setIsLoading(false);
+    setStreamState((current) => ({
+      ...current,
+      cancelled: true,
+      finished: true,
+      activeToolName: null,
+    }));
   }
 
   function formatRequestError(error: unknown) {
@@ -259,6 +342,154 @@ export function AiPanel({
     setMode(nextMode);
     setPendingPlan(null);
     setSelectedPlanStepIds([]);
+    setPendingProposal(null);
+  }
+
+  async function consumeAssistantResponse(input: {
+    body: Record<string, unknown>;
+    requestMode: AiMode;
+    originalMessage: string;
+    appendUserMessage: boolean;
+  }) {
+    const controller = beginAiRequest(input.requestMode);
+    let nextState = createInitialAssistantUiState({
+      pendingPlan,
+      selectedPlanStepIds,
+      pendingProposal,
+    });
+    setStreamState(nextState);
+
+    try {
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify(input.body),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("ndjson") && !contentType.includes("json")) {
+        throw new Error(await response.text());
+      }
+
+      if (contentType.includes("application/json") && !contentType.includes("ndjson")) {
+        const payload = (await response.json()) as {
+          message?: string;
+          error?: boolean;
+        };
+        setMessages((current) => [
+          ...current,
+          {
+            role: "assistant",
+            content: payload.message ?? t.aiError,
+            isError: Boolean(payload.error),
+          },
+        ]);
+        return;
+      }
+
+      for await (const event of readAssistantNdjsonStream(response)) {
+        if (event.type === "tool_started") {
+          setLoadingPhase("tool");
+        }
+        nextState = reduceAssistantStreamEvent(
+          nextState,
+          event,
+          input.originalMessage,
+        );
+        setStreamState(nextState);
+      }
+
+      if (requestCancelledRef.current || nextState.cancelled) {
+        setMessages((current) => [
+          ...current,
+          {
+            role: "assistant",
+            content: t.aiRequestCancelled,
+            isError: true,
+          },
+        ]);
+        return;
+      }
+
+      if (nextState.pendingPlan) {
+        setPendingPlan(nextState.pendingPlan);
+        setSelectedPlanStepIds(nextState.selectedPlanStepIds);
+      } else if (input.requestMode === "plan" && input.body.action === "execute_plan") {
+        setPendingPlan(null);
+        setSelectedPlanStepIds([]);
+      }
+
+      if (nextState.pendingProposal) {
+        setPendingProposal(nextState.pendingProposal);
+      }
+
+      // Prefer authoritative session after server-side persistence.
+      try {
+        const session = await fetchAiChatSession(resume.id, locale, intro);
+        const assistantMessage = assistantMessageFromUiState(
+          nextState,
+          t.aiError,
+        );
+        const serverHasAssistant =
+          !assistantMessage ||
+          session.messages.some(
+            (message) =>
+              message.role === "assistant" &&
+              message.content === assistantMessage.content,
+          );
+
+        if (serverHasAssistant || session.lastRunId === nextState.runId) {
+          setMessages(session.messages);
+          setPendingPlan(session.pendingPlan);
+          setSelectedPlanStepIds(session.selectedPlanStepIds);
+          setPendingProposal(session.pendingProposal);
+          setChatSummary(session.summary);
+          setSessionVersion(session.sessionVersion);
+          setMode(session.mode);
+        } else if (assistantMessage) {
+          setMessages((current) => [...current, assistantMessage]);
+          if (nextState.pendingPlan) {
+            setPendingPlan(nextState.pendingPlan);
+            setSelectedPlanStepIds(nextState.selectedPlanStepIds);
+          }
+          if (nextState.pendingProposal) {
+            setPendingProposal(nextState.pendingProposal);
+          }
+        }
+      } catch {
+        const assistantMessage = assistantMessageFromUiState(
+          nextState,
+          t.aiError,
+        );
+        if (assistantMessage) {
+          setMessages((current) => [...current, assistantMessage]);
+        }
+      }
+    } catch (error) {
+      if (!requestCancelledRef.current) {
+        setMessages((current) => [
+          ...current,
+          {
+            role: "assistant",
+            content: formatRequestError(error),
+            isError: true,
+          },
+        ]);
+      }
+    } finally {
+      finishAiRequest();
+      setIsLoading(false);
+      setStreamState((current) => ({
+        ...current,
+        finished: true,
+        activeToolName: null,
+      }));
+    }
   }
 
   async function sendMessage() {
@@ -273,68 +504,22 @@ export function AiPanel({
     setLoadingPhase(phase);
     setLoadingMessageIndex(0);
     setIsLoading(true);
-    const controller = beginAiRequest(mode);
 
-    try {
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          resumeId: resume.id,
-          selectedNodeId,
-          mode,
-          locale,
-          message: userMessage.content,
-          messages:
-            mode === "chat"
-              ? buildChatHistory(messages, t.aiIntro)
-              : undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
-      const payload = (await response.json()) as AiResponse;
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          content: payload.message,
-          isError: payload.error,
-        },
-      ]);
-      if (payload.error) {
-        return;
-      }
-      if (payload.plan) {
-        setPendingPlan({
-          originalMessage: userMessage.content,
-          plan: payload.plan,
-        });
-        setSelectedPlanStepIds(payload.plan.steps.map((step) => step.id));
-      } else if (mode !== "plan") {
-        setPendingPlan(null);
-        setSelectedPlanStepIds([]);
-      }
-      if (payload.resume) {
-        onResumeUpdated(payload.resume);
-      }
-    } catch (error) {
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          content: formatRequestError(error),
-          isError: true,
-        },
-      ]);
-    } finally {
-      finishAiRequest();
-      setIsLoading(false);
-    }
+    await consumeAssistantResponse({
+      requestMode: mode,
+      originalMessage: userMessage.content,
+      appendUserMessage: true,
+      body: {
+        resumeId: resume.id,
+        selectedNodeId,
+        mode,
+        locale,
+        message: userMessage.content,
+        resumeSnapshot: resume,
+        messages:
+          mode === "chat" ? buildChatHistory(messages, t.aiIntro) : undefined,
+      },
+    });
   }
 
   async function executePendingPlan() {
@@ -345,48 +530,84 @@ export function AiPanel({
     setLoadingPhase(loadingPhaseForMode("plan", "execute_plan"));
     setLoadingMessageIndex(0);
     setIsLoading(true);
-    const controller = beginAiRequest("plan");
+
+    const planToExecute = {
+      ...pendingPlan.plan,
+      steps: pendingPlan.plan.steps.filter((step) =>
+        selectedPlanStepIds.includes(step.id),
+      ),
+    };
+
+    await consumeAssistantResponse({
+      requestMode: "plan",
+      originalMessage: pendingPlan.originalMessage,
+      appendUserMessage: false,
+      body: {
+        resumeId: resume.id,
+        selectedNodeId,
+        mode: "plan",
+        action: "execute_plan",
+        locale,
+        message: pendingPlan.originalMessage,
+        plan: planToExecute,
+        resumeSnapshot: resume,
+      },
+    });
+  }
+
+  async function decideProposal(decision: "confirm" | "reject") {
+    if (!pendingProposal || isLoading) {
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadingPhase("edit");
+    const controller = beginAiRequest("edit");
 
     try {
-      const planToExecute = {
-        ...pendingPlan.plan,
-        steps: pendingPlan.plan.steps.filter((step) =>
-          selectedPlanStepIds.includes(step.id),
-        ),
-      };
-      const response = await fetch("/api/ai", {
+      const response = await fetch("/api/ai/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           resumeId: resume.id,
-          selectedNodeId,
-          mode: "plan",
-          action: "execute_plan",
+          proposalId: pendingProposal.proposalId,
+          decision,
           locale,
-          message: pendingPlan.originalMessage,
-          plan: planToExecute,
+          resumeSnapshot: resume,
         }),
       });
 
+      const payload = (await response.json()) as {
+        message?: string;
+        error?: boolean;
+        resume?: ResumeWithNodes;
+        session?: {
+          messages: AiMessage[];
+          pendingPlan: AiPendingPlan | null;
+          selectedPlanStepIds: string[];
+          pendingProposal: PendingPatchProposal | null;
+          summary: string | null;
+          sessionVersion: number;
+          mode: AiMode;
+        };
+      };
+
       if (!response.ok) {
-        throw new Error(await response.text());
+        throw new Error(payload.message ?? t.aiError);
       }
 
-      const payload = (await response.json()) as AiResponse;
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          content: payload.message,
-          isError: payload.error,
-        },
-      ]);
-      if (payload.error) {
-        return;
+      if (payload.session) {
+        setMessages(payload.session.messages);
+        setPendingPlan(payload.session.pendingPlan);
+        setSelectedPlanStepIds(payload.session.selectedPlanStepIds);
+        setPendingProposal(payload.session.pendingProposal);
+        setChatSummary(payload.session.summary);
+        setSessionVersion(payload.session.sessionVersion);
+        setMode(payload.session.mode);
+      } else {
+        setPendingProposal(null);
       }
-      setPendingPlan(null);
-      setSelectedPlanStepIds([]);
 
       if (payload.resume) {
         onResumeUpdated(payload.resume);
@@ -443,7 +664,9 @@ export function AiPanel({
             </p>
             {isLoading ? (
               <p className="mt-1 truncate text-xs text-[var(--app-muted)]">
-                {loadingStatus}
+                {streamState.activeToolName
+                  ? `${t.aiLoadingTool} (${streamState.activeToolName})`
+                  : loadingStatus}
               </p>
             ) : null}
           </div>
@@ -525,15 +748,37 @@ export function AiPanel({
                     : "mr-8 bg-[var(--app-surface)] text-[var(--app-text)] ring-1 ring-[var(--app-border)]"
               }`}
             >
-              {message.content}
+              {message.role === "assistant" ? (
+                <AssistantMarkdown>{message.content}</AssistantMarkdown>
+              ) : (
+                <span className="whitespace-pre-wrap">{message.content}</span>
+              )}
             </div>
           );
         })}
-        {isLoading ? <AiLoadingIndicator label={loadingStatus} /> : null}
+        {isLoading && streamState.streamingText ? (
+          <div className="mr-8 rounded-lg bg-[var(--app-surface)] px-3 py-2 text-sm leading-6 text-[var(--app-text)] ring-1 ring-[var(--app-border)]">
+            <AssistantMarkdown>{streamState.streamingText}</AssistantMarkdown>
+            <span className="ml-0.5 inline-block animate-pulse">▍</span>
+          </div>
+        ) : null}
+        {isLoading && !streamState.streamingText ? (
+          <AiLoadingIndicator label={loadingStatus} />
+        ) : null}
         <div ref={messagesEndRef} />
       </div>
 
-      {pendingPlan ? (
+      {pendingProposal ? (
+        <AiProposalReview
+          proposal={pendingProposal}
+          labels={t}
+          isLoading={isLoading}
+          onConfirm={() => void decideProposal("confirm")}
+          onReject={() => void decideProposal("reject")}
+        />
+      ) : null}
+
+      {pendingPlan && !pendingProposal ? (
         <div className="mt-4 rounded-lg border border-[var(--app-accent-border)] bg-[var(--app-accent-soft)] p-3">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--app-accent)]">
             {t.aiPlanReview}
@@ -572,30 +817,6 @@ export function AiPanel({
               disabled={isLoading || selectedPlanStepIds.length === 0}
               className="flex flex-1 items-center justify-center gap-2 rounded-md bg-[var(--app-primary)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[var(--app-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isLoading ? (
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 20 20"
-                  className="h-3.5 w-3.5 animate-spin"
-                  fill="none"
-                >
-                  <circle
-                    cx="10"
-                    cy="10"
-                    r="7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="opacity-25"
-                  />
-                  <path
-                    d="M17 10a7 7 0 0 0-7-7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    className="opacity-90"
-                  />
-                </svg>
-              ) : null}
               {isLoading ? loadingStatus : t.aiExecutePlan}
             </button>
             <button

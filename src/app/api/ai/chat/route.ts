@@ -10,6 +10,7 @@ import { aiModes } from "@/lib/ai/types";
 import {
   getAiChatSession,
   saveAiChatSession,
+  SessionVersionConflictError,
 } from "@/lib/db/ai-chat-repository";
 import { getResume } from "@/lib/db/resume-repository";
 import { dictionaries, locales, resolveLocale } from "@/lib/i18n";
@@ -27,14 +28,16 @@ const aiChatSessionSchema = z.object({
   resumeId: z.string(),
   locale: z.enum(locales).optional(),
   mode: z.enum(aiModes),
-  messages: z.array(aiMessageSchema),
+  messages: z.array(aiMessageSchema).optional(),
   pendingPlan: z
     .object({
       originalMessage: z.string(),
       plan: aiPlanSchema,
     })
-    .nullable(),
-  selectedPlanStepIds: z.array(z.string()),
+    .nullable()
+    .optional(),
+  selectedPlanStepIds: z.array(z.string()).optional(),
+  expectedSessionVersion: z.number().int().nonnegative().optional(),
 });
 
 export async function GET(request: Request) {
@@ -74,28 +77,49 @@ export async function PUT(request: Request) {
     const existing = await getAiChatSession(input.resumeId, intro);
     const normalized = normalizeAiChatSession(
       {
-        messages: input.messages,
+        messages: input.messages ?? existing?.messages,
         mode: input.mode,
-        pendingPlan: input.pendingPlan,
-        selectedPlanStepIds: input.selectedPlanStepIds,
+        pendingPlan:
+          input.pendingPlan === undefined
+            ? existing?.pendingPlan
+            : input.pendingPlan,
+        selectedPlanStepIds:
+          input.selectedPlanStepIds ?? existing?.selectedPlanStepIds ?? [],
+        pendingProposal: existing?.pendingProposal ?? null,
         summary: existing?.summary ?? null,
+        sessionVersion: existing?.sessionVersion ?? 0,
+        lastRunId: existing?.lastRunId ?? null,
       },
       intro,
     );
 
+    // Lightweight UI-state updates should not rewrite server-authored messages
+    // unless the client explicitly sends them.
     const model = hasAiConfiguration() ? createSummaryChatModel() : null;
-    const compacted = await compactChatSessionIfNeeded({
-      session: normalized,
-      introContent: intro,
-      locale,
-      resumeId: input.resumeId,
-      model,
-      historyConfig: resolveAssistantHistoryConfig(),
-    });
+    const compacted = input.messages
+      ? await compactChatSessionIfNeeded({
+          session: normalized,
+          introContent: intro,
+          locale,
+          resumeId: input.resumeId,
+          model,
+          historyConfig: resolveAssistantHistoryConfig(),
+        })
+      : normalized;
 
-    const saved = await saveAiChatSession(input.resumeId, compacted, intro);
+    const saved = await saveAiChatSession(input.resumeId, compacted, intro, {
+      expectedSessionVersion:
+        input.expectedSessionVersion ?? existing?.sessionVersion,
+    });
     return NextResponse.json({ session: saved });
   } catch (error) {
+    if (error instanceof SessionVersionConflictError) {
+      return NextResponse.json(
+        { message: dictionaries[locale].aiSessionConflict, error: true },
+        { status: 409 },
+      );
+    }
+
     const detail =
       error instanceof Error ? error.message : dictionaries[locale].aiError;
 

@@ -73,11 +73,17 @@ SQLITE_PATH=${path.join(configDir, "resume-pro.sqlite")}
 # DATABASE_PROVIDER=postgres
 # DATABASE_URL=postgres://user:password@localhost:5432/resume_pro
 
-# AI - OpenAI-compatible LangChain configuration
+# AI - OpenAI-compatible configuration
 AI_API_URL=https://api.openai.com/v1
 AI_API_KEY=
 AI_API_MODEL=gpt-4o-mini
+AI_TEMPERATURE=0.3
 AI_SUMMARY_MODEL=
+
+# AgentScope skills
+AI_SKILLS_ENABLED=true
+AI_SKILL_DIRS=
+AI_SKILLS=
 
 # AI chat history
 AI_HISTORY_MAX_MESSAGES=50

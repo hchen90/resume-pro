@@ -5,12 +5,15 @@ import { ChatOpenAI } from "@langchain/openai";
 import {
   resolveChatModelName,
   resolveSummaryModelName,
+  resolveTemperature,
 } from "@/lib/ai/model-config";
 
 export {
   defaultChatModel,
+  defaultTemperature,
   resolveChatModelName,
   resolveSummaryModelName,
+  resolveTemperature,
 } from "@/lib/ai/model-config";
 
 export function hasAiConfiguration() {
@@ -25,7 +28,7 @@ function createConfiguredChatModel(model: string) {
   return new ChatOpenAI({
     model,
     apiKey: process.env.AI_API_KEY,
-    temperature: 0.3,
+    temperature: resolveTemperature(),
     configuration: process.env.AI_API_URL
       ? { baseURL: process.env.AI_API_URL }
       : undefined,

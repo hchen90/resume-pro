@@ -1,4 +1,5 @@
 import { aiPlanSchema, type AiPlan } from "@/lib/ai/patch";
+import type { PendingPatchProposal } from "@/lib/ai/protocol";
 import { aiModes, type AiMessage, type AiMode } from "@/lib/ai/types";
 
 export type AiPendingPlan = {
@@ -11,7 +12,10 @@ export type AiChatSession = {
   mode: AiMode;
   pendingPlan: AiPendingPlan | null;
   selectedPlanStepIds: string[];
+  pendingProposal: PendingPatchProposal | null;
   summary: string | null;
+  sessionVersion: number;
+  lastRunId: string | null;
 };
 
 export function createDefaultAiChatSession(introContent: string): AiChatSession {
@@ -20,7 +24,10 @@ export function createDefaultAiChatSession(introContent: string): AiChatSession 
     mode: "chat",
     pendingPlan: null,
     selectedPlanStepIds: [],
+    pendingProposal: null,
     summary: null,
+    sessionVersion: 0,
+    lastRunId: null,
   };
 }
 
@@ -62,6 +69,30 @@ function normalizePendingPlan(value: unknown): AiPendingPlan | null {
   };
 }
 
+function normalizePendingProposal(value: unknown): PendingPatchProposal | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const candidate = value as Partial<PendingPatchProposal>;
+  if (
+    typeof candidate.proposalId !== "string" ||
+    typeof candidate.resumeId !== "string" ||
+    (candidate.mode !== "edit" && candidate.mode !== "plan") ||
+    typeof candidate.message !== "string" ||
+    !Array.isArray(candidate.patches) ||
+    typeof candidate.snapshotHash !== "string" ||
+    typeof candidate.baseUpdatedAt !== "string" ||
+    typeof candidate.createdAt !== "string" ||
+    !candidate.summary ||
+    typeof candidate.summary !== "object"
+  ) {
+    return null;
+  }
+
+  return candidate as PendingPatchProposal;
+}
+
 export function normalizeAiChatSession(
   raw: Partial<AiChatSession> | null | undefined,
   introContent: string,
@@ -80,6 +111,7 @@ export function normalizeAiChatSession(
     raw.mode && aiModes.includes(raw.mode) ? raw.mode : defaults.mode;
 
   const pendingPlan = normalizePendingPlan(raw.pendingPlan);
+  const pendingProposal = normalizePendingProposal(raw.pendingProposal);
 
   const selectedPlanStepIds = Array.isArray(raw.selectedPlanStepIds)
     ? raw.selectedPlanStepIds.filter(
@@ -92,6 +124,18 @@ export function normalizeAiChatSession(
       ? raw.summary.trim()
       : null;
 
+  const sessionVersion =
+    typeof raw.sessionVersion === "number" &&
+    Number.isFinite(raw.sessionVersion) &&
+    raw.sessionVersion >= 0
+      ? Math.floor(raw.sessionVersion)
+      : defaults.sessionVersion;
+
+  const lastRunId =
+    typeof raw.lastRunId === "string" && raw.lastRunId.trim()
+      ? raw.lastRunId
+      : null;
+
   return {
     messages: messages.length > 0 ? messages : defaults.messages,
     mode,
@@ -101,7 +145,10 @@ export function normalizeAiChatSession(
           pendingPlan.plan.steps.some((step) => step.id === stepId),
         )
       : [],
+    pendingProposal,
     summary,
+    sessionVersion,
+    lastRunId,
   };
 }
 

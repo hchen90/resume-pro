@@ -15,7 +15,7 @@
 ### How locale is applied
 
 1. URL query `?lang=xx`
-2. Cookie `resume-pro-locale` (set by `language-switcher` / `SystemSettings`)
+2. Cookie `resume-pro-locale` (set by `language-switcher` / settings page)
 
 Pages resolve `searchParams.lang ?? cookie` and append `settingsQuery({ lang, style })` on internal links to preserve state.
 
@@ -36,12 +36,13 @@ Pages resolve `searchParams.lang ?? cookie` and append `settingsQuery({ lang, st
 
 Root `layout.tsx` sets `data-ui-style={uiStyle}` on `<html>`; `globals.css` switches CSS variables by attribute.
 
-## SystemSettings component
+## Settings page
 
-`src/components/system-settings.tsx` provides:
+`/settings` (`src/app/settings/page.tsx` + `src/components/settings-page.tsx`) provides:
 
 - Locale dropdown
 - UI style picker
-- On Electron: AI API URL / key / model form (`POST /api/settings/ai`)
+- Searchable, scrollable AI skills list (name + description + source)
+- On Electron: AI API URL / key / model form (`PUT /api/settings/ai`)
 
-Home and editor pass current `locale`, `uiStyle`, and label strings via props.
+The home page links to `/settings` instead of embedding a dropdown panel, so large skill catalogs stay readable.

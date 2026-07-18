@@ -11,7 +11,7 @@ Resume Pro is a **local-first**, open-source AI resume editor: manage multiple r
 | Language | TypeScript |
 | ORM | Drizzle ORM |
 | Database | SQLite (default), optional Postgres |
-| AI | LangChain + OpenAI-compatible API |
+| AI | AgentScope (assistant) + LangChain (job match) + OpenAI-compatible API |
 | Desktop | Electron 39 |
 | Tests | Vitest |
 
@@ -47,7 +47,7 @@ flowchart LR
 
 1. **Resume CRUD** — Create from the home page; structured node editing; PATCH persistence.
 2. **Template preview** — Six built-in templates; dedicated print/PDF download page.
-3. **AI assistant** — Chat (suggestions), Edit (apply changes), Plan (review steps before applying).
+3. **AI assistant** — Chat (suggestions), Edit/Plan (streamed proposals that save only after confirmation).
 4. **Job fit** — Save JDs, pick a resume, get a 0–10 score with strengths, gaps, and suggestions.
 5. **i18n** — Eight locales; three UI themes (github / warm / slate).
 6. **Electron** — Dev mode loads local Next; production bundles the standalone server.

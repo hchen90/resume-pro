@@ -1,6 +1,11 @@
 import type { Dictionary } from "@/lib/i18n";
 
-export type AiLoadingPhase = "chat" | "edit" | "plan-draft" | "plan-execute";
+export type AiLoadingPhase =
+  | "chat"
+  | "edit"
+  | "plan-draft"
+  | "plan-execute"
+  | "tool";
 
 export const LOADING_STATUS_INTERVAL_MS = 2800;
 
@@ -28,6 +33,7 @@ export function getAiLoadingMessages(
     | "aiLoadingEditApplying"
     | "aiLoadingPlanDrafting"
     | "aiLoadingPlanExecuting"
+    | "aiLoadingTool"
   >,
 ) {
   switch (phase) {
@@ -39,6 +45,8 @@ export function getAiLoadingMessages(
       return [labels.aiLoadingPlanDrafting];
     case "plan-execute":
       return [labels.aiLoadingPlanExecuting];
+    case "tool":
+      return [labels.aiLoadingTool];
     default:
       return [labels.aiLoadingChat];
   }

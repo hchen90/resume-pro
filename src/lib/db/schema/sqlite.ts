@@ -46,5 +46,10 @@ export const aiChatSessions = sqliteTable("ai_chat_sessions", {
   selectedPlanStepIds: text("selected_plan_step_ids", {
     mode: "json",
   }).notNull(),
+  pendingProposal: text("pending_proposal", { mode: "json" }),
+  sessionVersion: integer("session_version").notNull().default(0),
+  lastRunId: text("last_run_id"),
+  agentContext: text("agent_context", { mode: "json" }),
+  agentState: text("agent_state", { mode: "json" }),
   updatedAt: text("updated_at").notNull(),
 });

@@ -2,9 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { createResumeAction } from "@/app/actions";
-import { SystemSettings } from "@/components/system-settings";
 import { listResumes } from "@/lib/db/resume-repository";
-import { isElectronRuntime, readElectronAiConfig } from "@/lib/electron-env";
 import { dictionaries, resolveLocale } from "@/lib/i18n";
 import { getCurrentVersion } from "@/lib/release-notes";
 import {
@@ -34,9 +32,6 @@ export default async function Home({
   const resumes = await listResumes();
   const currentVersion = getCurrentVersion();
   const query = settingsQuery({ lang: locale, style: uiStyle });
-  const electronAiConfig = isElectronRuntime()
-    ? readElectronAiConfig()
-    : undefined;
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-6 py-10">
@@ -50,29 +45,22 @@ export default async function Home({
             {t.currentVersion} {currentVersion}
           </span>
         </Link>
-        <SystemSettings
-          currentLocale={locale}
-          currentUiStyle={uiStyle}
-          electronAiConfig={electronAiConfig}
-          labels={{
-            settings: t.settings,
-            language: t.language,
-            interfaceStyle: t.interfaceStyle,
-            uiStyles: t.uiStyles,
-            aiSettings: t.aiSettings,
-            aiApiUrl: t.aiApiUrl,
-            aiApiKey: t.aiApiKey,
-            aiApiModel: t.aiApiModel,
-            aiSummaryModel: t.aiSummaryModel,
-            aiSummaryModelHint: t.aiSummaryModelHint,
-            aiCustomApiUrl: t.aiCustomApiUrl,
-            aiCustomProvider: t.aiCustomProvider,
-            saveAiSettings: t.saveAiSettings,
-            aiSettingsSaved: t.aiSettingsSaved,
-            aiSettingsRestartRequired: t.aiSettingsRestartRequired,
-            aiSettingsSaveFailed: t.aiSettingsSaveFailed,
-          }}
-        />
+        <Link
+          href={`/settings?${query}`}
+          className="inline-flex items-center gap-2 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm font-medium text-[var(--app-text)] shadow-sm transition hover:bg-[var(--app-muted-surface)]"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--app-accent-soft)] text-[var(--app-accent)] ring-1 ring-[var(--app-accent-border)]">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              className="h-4 w-4"
+              fill="currentColor"
+            >
+              <path d="M8 1.75a.75.75 0 0 1 .75.75v.51a5.5 5.5 0 0 1 1.35.56l.36-.36a.75.75 0 1 1 1.06 1.06l-.36.36c.25.42.44.88.56 1.35h.51a.75.75 0 0 1 0 1.5h-.51a5.5 5.5 0 0 1-.56 1.35l.36.36a.75.75 0 0 1-1.06 1.06l-.36-.36a5.5 5.5 0 0 1-1.35.56v.51a.75.75 0 0 1-1.5 0v-.51a5.5 5.5 0 0 1-1.35-.56l-.36.36a.75.75 0 0 1-1.06-1.06l.36-.36a5.5 5.5 0 0 1-.56-1.35H3.75a.75.75 0 0 1 0-1.5h.51c.12-.47.31-.93.56-1.35l-.36-.36a.75.75 0 0 1 1.06-1.06l.36.36c.42-.25.88-.44 1.35-.56V2.5A.75.75 0 0 1 8 1.75Zm0 3.5a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5Z" />
+            </svg>
+          </span>
+          <span>{t.settings}</span>
+        </Link>
       </div>
       <section className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-8 shadow-sm">
         <p className="mb-3 text-sm uppercase tracking-[0.35em] text-[var(--app-accent)]">

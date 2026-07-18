@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "dist/**",
     "dist-electron/**",
     "next-env.d.ts",
+    // Generated Vitest coverage report.
+    "coverage/**",
   ]),
 ]);
 

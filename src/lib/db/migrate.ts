@@ -6,6 +6,19 @@ import { getDbClient } from "./client";
 
 let migrated = false;
 
+function addSqliteColumn(sqlText: string) {
+  const client = getDbClient();
+  if (client.provider !== "sqlite") {
+    return;
+  }
+
+  try {
+    client.raw.exec(sqlText);
+  } catch {
+    /* column already exists */
+  }
+}
+
 export async function ensureDatabase() {
   if (migrated) {
     return;
@@ -57,17 +70,25 @@ export async function ensureDatabase() {
         summary TEXT,
         pending_plan TEXT,
         selected_plan_step_ids TEXT NOT NULL,
+        pending_proposal TEXT,
+        session_version INTEGER NOT NULL DEFAULT 0,
+        last_run_id TEXT,
+        agent_context TEXT,
+        agent_state TEXT,
         updated_at TEXT NOT NULL
       );
     `);
 
-    try {
-      client.raw.exec(
-        `ALTER TABLE resumes ADD COLUMN font_preset TEXT NOT NULL DEFAULT 'sans';`,
-      );
-    } catch {
-      /* column already exists */
-    }
+    addSqliteColumn(
+      `ALTER TABLE resumes ADD COLUMN font_preset TEXT NOT NULL DEFAULT 'sans';`,
+    );
+    addSqliteColumn(`ALTER TABLE ai_chat_sessions ADD COLUMN pending_proposal TEXT`);
+    addSqliteColumn(
+      `ALTER TABLE ai_chat_sessions ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0`,
+    );
+    addSqliteColumn(`ALTER TABLE ai_chat_sessions ADD COLUMN last_run_id TEXT`);
+    addSqliteColumn(`ALTER TABLE ai_chat_sessions ADD COLUMN agent_context TEXT`);
+    addSqliteColumn(`ALTER TABLE ai_chat_sessions ADD COLUMN agent_state TEXT`);
   } else {
     await client.db.execute(sql`
       CREATE TABLE IF NOT EXISTS resumes (
@@ -121,8 +142,33 @@ export async function ensureDatabase() {
         summary TEXT,
         pending_plan TEXT,
         selected_plan_step_ids TEXT NOT NULL,
+        pending_proposal TEXT,
+        session_version INTEGER NOT NULL DEFAULT 0,
+        last_run_id TEXT,
+        agent_context TEXT,
+        agent_state TEXT,
         updated_at TEXT NOT NULL
       );
+    `);
+    await client.db.execute(sql`
+      ALTER TABLE ai_chat_sessions
+      ADD COLUMN IF NOT EXISTS pending_proposal TEXT;
+    `);
+    await client.db.execute(sql`
+      ALTER TABLE ai_chat_sessions
+      ADD COLUMN IF NOT EXISTS session_version INTEGER NOT NULL DEFAULT 0;
+    `);
+    await client.db.execute(sql`
+      ALTER TABLE ai_chat_sessions
+      ADD COLUMN IF NOT EXISTS last_run_id TEXT;
+    `);
+    await client.db.execute(sql`
+      ALTER TABLE ai_chat_sessions
+      ADD COLUMN IF NOT EXISTS agent_context TEXT;
+    `);
+    await client.db.execute(sql`
+      ALTER TABLE ai_chat_sessions
+      ADD COLUMN IF NOT EXISTS agent_state TEXT;
     `);
   }
 

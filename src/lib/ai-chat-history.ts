@@ -57,6 +57,7 @@ function isDefaultSession(session: AiChatSession, introContent: string) {
     session.messages[0]?.content === introContent &&
     session.mode === "chat" &&
     !session.pendingPlan &&
+    !session.pendingProposal &&
     session.selectedPlanStepIds.length === 0 &&
     !session.summary
   );
@@ -80,16 +81,17 @@ export async function fetchAiChatSession(
 
   const legacy = readLegacySession(resumeId, introContent);
   if (legacy && isDefaultSession(session, introContent) && !isDefaultSession(legacy, introContent)) {
-    session = await saveAiChatSession(resumeId, legacy, locale, introContent);
+    session = await patchAiChatSession(resumeId, legacy, locale, introContent);
     clearLegacySession(resumeId);
   }
 
   return session;
 }
 
-export async function saveAiChatSession(
+export async function patchAiChatSession(
   resumeId: string,
-  session: Omit<AiChatSession, "summary">,
+  session: Pick<AiChatSession, "mode" | "pendingPlan" | "selectedPlanStepIds"> &
+    Partial<Pick<AiChatSession, "messages" | "sessionVersion">>,
   locale: Locale,
   introContent: string,
 ): Promise<AiChatSession> {
@@ -100,9 +102,10 @@ export async function saveAiChatSession(
       resumeId,
       locale,
       mode: session.mode,
-      messages: session.messages,
       pendingPlan: session.pendingPlan,
       selectedPlanStepIds: session.selectedPlanStepIds,
+      messages: session.messages,
+      expectedSessionVersion: session.sessionVersion,
     }),
   });
 
@@ -112,4 +115,14 @@ export async function saveAiChatSession(
 
   const payload = (await response.json()) as { session: AiChatSession };
   return normalizeAiChatSession(payload.session, introContent);
+}
+
+/** @deprecated Use patchAiChatSession for UI-state sync. */
+export async function saveAiChatSession(
+  resumeId: string,
+  session: Omit<AiChatSession, "summary">,
+  locale: Locale,
+  introContent: string,
+): Promise<AiChatSession> {
+  return patchAiChatSession(resumeId, session, locale, introContent);
 }

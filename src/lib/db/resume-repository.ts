@@ -22,6 +22,13 @@ import { ensureDatabase } from "./migrate";
 import * as pgSchema from "./schema/postgres";
 import * as sqliteSchema from "./schema/sqlite";
 
+export class ResumeVersionConflictError extends Error {
+  constructor(message = "Resume version conflict.") {
+    super(message);
+    this.name = "ResumeVersionConflictError";
+  }
+}
+
 type ResumeRow = {
   id: string;
   title: string;
@@ -124,16 +131,21 @@ export async function createResume(
   const nodes = createDefaultResumeNodes(resume.id, locale);
 
   if (client.provider === "sqlite") {
-    client.db.insert(sqliteSchema.resumes).values(resume).run();
-    client.db
-      .insert(sqliteSchema.resumeNodes)
-      .values(nodes.map((node) => toSqliteNodeValue(node)))
-      .run();
+    const tx = client.raw.transaction(() => {
+      client.db.insert(sqliteSchema.resumes).values(resume).run();
+      client.db
+        .insert(sqliteSchema.resumeNodes)
+        .values(nodes.map((node) => toSqliteNodeValue(node)))
+        .run();
+    });
+    tx();
   } else {
-    await client.db.insert(pgSchema.resumes).values(resume);
-    await client.db
-      .insert(pgSchema.resumeNodes)
-      .values(nodes.map((node) => toPostgresNodeValue(node)));
+    await client.db.transaction(async (tx) => {
+      await tx.insert(pgSchema.resumes).values(resume);
+      await tx
+        .insert(pgSchema.resumeNodes)
+        .values(nodes.map((node) => toPostgresNodeValue(node)));
+    });
   }
 
   return resume.id;
@@ -153,6 +165,9 @@ export async function deleteResume(id: string) {
 export async function saveResume(
   id: string,
   input: ResumeSaveInput,
+  options?: {
+    expectedUpdatedAt?: string;
+  },
 ): Promise<ResumeWithNodes> {
   await ensureDatabase();
   const client = getDbClient();
@@ -172,30 +187,70 @@ export async function saveResume(
   }));
 
   if (client.provider === "sqlite") {
-    client.db
-      .update(sqliteSchema.resumes)
-      .set(resumeUpdate)
-      .where(eq(sqliteSchema.resumes.id, id))
-      .run();
-    client.db
-      .delete(sqliteSchema.resumeNodes)
-      .where(eq(sqliteSchema.resumeNodes.resumeId, id))
-      .run();
-    client.db
-      .insert(sqliteSchema.resumeNodes)
-      .values(nodes.map((node) => toSqliteNodeValue(node)))
-      .run();
+    const tx = client.raw.transaction(() => {
+      const [current] = client.db
+        .select()
+        .from(sqliteSchema.resumes)
+        .where(eq(sqliteSchema.resumes.id, id))
+        .limit(1)
+        .all();
+
+      if (!current) {
+        throw new Error(`Resume ${id} was not found.`);
+      }
+
+      if (
+        options?.expectedUpdatedAt &&
+        current.updatedAt !== options.expectedUpdatedAt
+      ) {
+        throw new ResumeVersionConflictError();
+      }
+
+      client.db
+        .update(sqliteSchema.resumes)
+        .set(resumeUpdate)
+        .where(eq(sqliteSchema.resumes.id, id))
+        .run();
+      client.db
+        .delete(sqliteSchema.resumeNodes)
+        .where(eq(sqliteSchema.resumeNodes.resumeId, id))
+        .run();
+      client.db
+        .insert(sqliteSchema.resumeNodes)
+        .values(nodes.map((node) => toSqliteNodeValue(node)))
+        .run();
+    });
+    tx();
   } else {
-    await client.db
-      .update(pgSchema.resumes)
-      .set(resumeUpdate)
-      .where(eq(pgSchema.resumes.id, id));
-    await client.db
-      .delete(pgSchema.resumeNodes)
-      .where(eq(pgSchema.resumeNodes.resumeId, id));
-    await client.db
-      .insert(pgSchema.resumeNodes)
-      .values(nodes.map((node) => toPostgresNodeValue(node)));
+    await client.db.transaction(async (tx) => {
+      const [current] = await tx
+        .select()
+        .from(pgSchema.resumes)
+        .where(eq(pgSchema.resumes.id, id))
+        .limit(1);
+
+      if (!current) {
+        throw new Error(`Resume ${id} was not found.`);
+      }
+
+      if (
+        options?.expectedUpdatedAt &&
+        current.updatedAt !== options.expectedUpdatedAt
+      ) {
+        throw new ResumeVersionConflictError();
+      }
+
+      await tx
+        .update(pgSchema.resumes)
+        .set(resumeUpdate)
+        .where(eq(pgSchema.resumes.id, id));
+      await tx
+        .delete(pgSchema.resumeNodes)
+        .where(eq(pgSchema.resumeNodes.resumeId, id));
+      await tx
+        .insert(pgSchema.resumeNodes)
+        .values(nodes.map((node) => toPostgresNodeValue(node)));
+    });
   }
 
   const saved = await getResume(id);

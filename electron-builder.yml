@@ -9,6 +9,7 @@ files:
   - .next/standalone/**
   - .next/static/**
   - public/**
+  - skills/**
 mac:
   icon: assets/icons/icon.icns
   target:

@@ -4,7 +4,8 @@
 
 | Route | File | Description |
 |-------|------|-------------|
-| `/` | `src/app/page.tsx` | Home: version, settings, new resume, tools, resume list |
+| `/` | `src/app/page.tsx` | Home: version, settings link, new resume, tools, resume list |
+| `/settings` | `src/app/settings/page.tsx` | Dedicated settings: locale, theme, AI skills, Electron AI config |
 | `/resumes/[id]` | `src/app/resumes/[id]/page.tsx` | Resume editor workspace |
 | `/resumes/[id]/download` | `src/app/resumes/[id]/download/page.tsx` | Print / PDF page |
 | `/tools/job-match` | `src/app/tools/job-match/page.tsx` | JD list and create |
@@ -31,7 +32,7 @@ Query params `lang` and `ui`, plus cookies, control locale and theme (see [i18n-
 
 | Component | Role |
 |-----------|------|
-| `system-settings.tsx` | Locale, UI theme, Electron AI config |
+| `settings-page.tsx` | Full settings page: locale, theme, searchable AI skills, Electron AI config |
 | `language-switcher.tsx` | Locale switcher |
 
 ### Job fit (`src/components/job-match/`)

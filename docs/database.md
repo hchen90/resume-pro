@@ -14,7 +14,8 @@
 | `src/lib/db/migrate.ts` | `ensureDatabase()`: idempotent `CREATE TABLE IF NOT EXISTS` |
 | `src/lib/db/schema/sqlite.ts` | SQLite Drizzle schema |
 | `src/lib/db/schema/postgres.ts` | Postgres Drizzle schema |
-| `src/lib/db/resume-repository.ts` | Resume CRUD |
+| `src/lib/db/resume-repository.ts` | Resume CRUD (transactional save + optimistic lock) |
+| `src/lib/db/ai-chat-repository.ts` | Assistant session persistence |
 | `src/lib/db/job-description-repository.ts` | JD CRUD |
 | `drizzle.config.ts` | Drizzle Kit config (`db:generate` / `db:push`) |
 
@@ -50,6 +51,24 @@
 | `content` | Full JD text |
 | `created_at` / `updated_at` | ISO timestamps |
 
+### `ai_chat_sessions`
+
+One row per resume (FK cascade on resume delete).
+
+| Column | Description |
+|--------|-------------|
+| `resume_id` | Primary key / FK to `resumes` |
+| `mode` | `chat` \| `edit` \| `plan` |
+| `messages` | JSON chat transcript |
+| `summary` | Optional compacted history summary |
+| `pending_plan` | JSON plan awaiting step selection |
+| `selected_plan_step_ids` | JSON string array |
+| `pending_proposal` | JSON patch proposal awaiting confirm |
+| `session_version` | Optimistic concurrency counter |
+| `last_run_id` | Last assistant run id |
+| `agent_context` / `agent_state` | Reserved AgentScope state JSON |
+| `updated_at` | ISO timestamp |
+
 ## Provider differences
 
 - **SQLite**: `better-sqlite3`, WAL + foreign keys; default path `./data/resume-pro.sqlite`; Electron uses `~/.resume-pro/resume-pro.sqlite`.
@@ -62,8 +81,13 @@
 - `listResumes()` — ordered by `updatedAt` descending
 - `getResume(id)` — includes nodes, sorted by `sortOrder`
 - `createResume(title, locale?)` — seeds default nodes via `createDefaultResumeNodes`
-- `saveResume(id, ResumeSaveInput)` — updates resume and **replaces all nodes**
+- `saveResume(id, ResumeSaveInput, { expectedUpdatedAt? })` — transactional update that **replaces all nodes**; throws `ResumeVersionConflictError` when the optimistic lock fails
 - `deleteResume(id)`
+
+### AI chat sessions (`ai-chat-repository.ts`)
+
+- `getAiChatSession(resumeId, introContent)`
+- `saveAiChatSession(resumeId, session, introContent, { expectedSessionVersion? })`
 
 ### Job descriptions (`job-description-repository.ts`)
 

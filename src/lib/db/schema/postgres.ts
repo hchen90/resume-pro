@@ -44,5 +44,10 @@ export const aiChatSessions = pgTable("ai_chat_sessions", {
   summary: text("summary"),
   pendingPlan: text("pending_plan"),
   selectedPlanStepIds: text("selected_plan_step_ids").notNull(),
+  pendingProposal: text("pending_proposal"),
+  sessionVersion: integer("session_version").notNull().default(0),
+  lastRunId: text("last_run_id"),
+  agentContext: text("agent_context"),
+  agentState: text("agent_state"),
   updatedAt: text("updated_at").notNull(),
 });
