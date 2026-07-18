@@ -8,10 +8,12 @@ Resume Pro is an open-source, local-first AI resume editor for managing resumes,
 
 - Local-first by default, using SQLite out of the box with optional Postgres support.
 - Structured resume editing across personal information, summary, work experience, projects, education, skills, and other sections.
-- Multiple resume templates, including Classic, Modern, Compact, Elegant, Timeline, and Creative styles.
-- AI-assisted editing with chat suggestions, direct edit mode, and a Plan mode that lets users review changes before applying them.
+- Seven built-in templates: Classic, Modern, Compact, Elegant, Timeline, Creative, and Academic.
+- Live preview, resume font selection, section reordering, and print/PDF export.
+- AI-assisted editing with Chat, Edit, and Plan modes. Edit and Plan changes are reviewed before they are applied.
 - Job fit analysis that compares saved job descriptions against existing resumes and returns a 10-point score, strengths, gaps, and improvement suggestions.
-- Browser-based local app with Electron development and packaging support for desktop use.
+- Eight interface languages, three themes, and bundled multilingual fonts.
+- Browser-based local app with Electron packaging support for macOS, Windows, and Linux.
 
 ## Tech Stack
 
@@ -21,18 +23,26 @@ Resume Pro is an open-source, local-first AI resume editor for managing resumes,
 - Tailwind CSS
 - Drizzle ORM
 - SQLite / Postgres
-- LangChain OpenAI-compatible API
+- AgentScope for the resume assistant
+- LangChain for job fit analysis
+- OpenAI-compatible AI APIs
 - Electron
+
+## Prerequisites
+
+- Node.js 20.9 or newer (Node.js 22 recommended)
+- npm
+- Native build tools if a prebuilt `better-sqlite3` binary is unavailable for your platform
 
 ## Local Development
 
 Install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
-Copy the example environment file:
+Copy the example environment file. `.env` is used by both the web app and database CLI commands:
 
 ```bash
 cp .env.example .env
@@ -63,7 +73,11 @@ AI_API_KEY=your-api-key
 AI_API_MODEL=gpt-4o-mini
 ```
 
-If `AI_API_KEY` is not configured, core resume editing still works. The AI assistant and job fit analysis will prompt for AI configuration.
+Any provider that exposes an OpenAI-compatible base URL can be used. The same settings are shared by the AgentScope resume assistant and LangChain job fit analysis. See [`.env.example`](./.env.example) and the [AI documentation](./docs/ai.md) for optional model, temperature, history, and skill settings.
+
+If `AI_API_KEY` is not configured, core resume editing still works. The AI assistant and job fit analysis will prompt for AI configuration. Keep secrets out of version control.
+
+Database tables are created automatically during normal startup; `db:push` is only needed while developing schema changes.
 
 ## Electron Desktop App
 
@@ -85,17 +99,48 @@ Create an unpacked build for local inspection:
 npm run pack:electron
 ```
 
+The packaged app runs its own local Next.js server and stores its configuration and SQLite database under `~/.resume-pro/`. AI settings can be changed in System Settings and take effect after restarting the app.
+
+`build:electron` creates the installer configured for the host platform: DMG on macOS, NSIS on Windows, or AppImage on Linux.
+
+## Docker
+
+Build and run the production image:
+
+```bash
+docker build -t resume-pro .
+docker run --rm -p 3000:3000 \
+  --env-file .env \
+  -v resume-pro-data:/app/data \
+  resume-pro
+```
+
 ## Common Commands
 
 - `npm run dev` - Start the Next.js development server.
+- `npm start` - Start a previously built production server.
 - `npm run dev:electron` - Start Next.js and open the Electron development app.
 - `npm run build` - Generate release notes and build the production Next.js app.
 - `npm run build:electron` - Build and package the Electron desktop app.
+- `npm run pack:electron` - Create an unpacked desktop build for inspection.
 - `npm run lint` - Run ESLint.
 - `npm run typecheck` - Run TypeScript type checking.
 - `npm run test` - Run the Vitest test suite.
+- `npm run test:coverage` - Run tests with coverage enforcement.
 - `npm run db:generate` - Generate Drizzle database migration files.
 - `npm run db:push` - Push the current Drizzle schema to the configured database.
+- `npm run release-notes:generate` - Regenerate release notes from Git history.
+
+## Documentation
+
+- [Documentation index](./docs/README.md)
+- [Architecture and data flow](./docs/overview.md)
+- [Resume model and patches](./docs/resume.md)
+- [Templates](./docs/templates.md)
+- [AI assistant](./docs/ai.md)
+- [Job matching](./docs/job-match.md)
+- [API routes](./docs/api.md)
+- [Electron runtime and packaging](./docs/electron.md)
 
 ## License
 
