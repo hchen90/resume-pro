@@ -4,7 +4,7 @@ import {
   createEmptyNodeItem,
   isMultiItemNodeType,
 } from "@/lib/resume/defaults";
-import { nodeItems } from "@/lib/resume/format";
+import { nodeItems, toMonthInputValue } from "@/lib/resume/format";
 import type {
   ResumeNode,
   ResumeNodeContent,
@@ -24,6 +24,7 @@ type NodeEditorProps = {
     itemSubtitle: string;
     itemStartDate: string;
     itemEndDate: string;
+    itemDatePlaceholder: string;
     itemLocation: string;
     itemDescription: string;
     skillsHelp: string;
@@ -156,13 +157,21 @@ function ItemsField({
             />
             <ItemInput
               label={labels.itemStartDate}
-              value={item.startDate}
+              value={
+                dateInputType === "month"
+                  ? toMonthInputValue(item.startDate)
+                  : item.startDate
+              }
               type={dateInputType}
               onChange={(value) => updateItem(item.id, { startDate: value })}
             />
             <ItemInput
               label={labels.itemEndDate}
-              value={item.endDate}
+              value={
+                dateInputType === "month"
+                  ? toMonthInputValue(item.endDate)
+                  : item.endDate
+              }
               type={dateInputType}
               onChange={(value) => updateItem(item.id, { endDate: value })}
             />
@@ -205,11 +214,13 @@ function ItemInput({
   label,
   value,
   type = "text",
+  placeholder,
   onChange,
 }: {
   label: string;
   value?: string;
   type?: "text" | "month";
+  placeholder?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -218,6 +229,7 @@ function ItemInput({
       <input
         type={type}
         value={value ?? ""}
+        placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         className="mt-1 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-[var(--app-text)] outline-none focus:border-[var(--app-accent)]"
       />

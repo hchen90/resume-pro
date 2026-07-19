@@ -23,6 +23,10 @@ export const resumePatchSchema = z.discriminatedUnion("op", [
     title: z.string().optional(),
     content: resumeNodeContentSchema.optional(),
     enabled: z.boolean().optional(),
+    /** When true, content.items becomes the full final item list (delete-by-omission + reorder). */
+    replaceItems: z.boolean().optional(),
+    /** Explicit item ids to remove from a multi-item node. */
+    removeItemIds: z.array(z.string().min(1)).optional(),
   }),
   z.object({
     op: z.literal("create_node"),
@@ -313,6 +317,8 @@ export function applyResumePatches(
               title: patch.title,
               content: patch.content,
               enabled: patch.enabled,
+              replaceItems: patch.replaceItems,
+              removeItemIds: patch.removeItemIds,
             })
           : node,
       );
@@ -396,6 +402,8 @@ function mergeNodePatch(
     title?: string;
     content?: ResumeNodeContent;
     enabled?: boolean;
+    replaceItems?: boolean;
+    removeItemIds?: string[];
   },
 ): ResumeNode {
   const patchContent = withoutEmptyPatchValues(patch.content);
@@ -405,12 +413,39 @@ function mergeNodePatch(
     ...otherPatchContent,
   };
 
-  if (isMultiItemNodeType(node.type) && patchItems?.length) {
-    content = {
-      ...content,
-      items: mergeItemsPatch(nodeItems(node), patchItems),
-      body: undefined,
-    };
+  if (isMultiItemNodeType(node.type)) {
+    const existingItems = nodeItems(node);
+    let nextItems = existingItems;
+
+    if (patch.replaceItems && patchItems) {
+      nextItems = patchItems.map((item) => ({
+        id:
+          typeof item.id === "string" && item.id.trim()
+            ? item.id.trim()
+            : crypto.randomUUID(),
+        title: item.title ?? "",
+        ...withoutEmptyItemPatchValues(item),
+      }));
+    } else if (patchItems?.length) {
+      nextItems = mergeItemsPatch(existingItems, patchItems);
+    }
+
+    if (patch.removeItemIds?.length) {
+      const removeIds = new Set(patch.removeItemIds);
+      nextItems = nextItems.filter((item) => !removeIds.has(item.id));
+    }
+
+    if (
+      patch.replaceItems ||
+      patchItems?.length ||
+      patch.removeItemIds?.length
+    ) {
+      content = {
+        ...content,
+        items: nextItems,
+        body: undefined,
+      };
+    }
   }
 
   return normalizeMultiItemNode({

@@ -431,6 +431,7 @@ export function ResumeWorkspace({
                 itemSubtitle: t.itemSubtitle,
                 itemStartDate: t.itemStartDate,
                 itemEndDate: t.itemEndDate,
+                itemDatePlaceholder: t.itemDatePlaceholder,
                 itemLocation: t.itemLocation,
                 itemDescription: t.itemDescription,
                 skillsHelp: t.skillsHelp,

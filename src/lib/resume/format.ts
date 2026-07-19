@@ -78,6 +78,28 @@ export function itemDateRange(item: ResumeNodeItem) {
   return [item.startDate, item.endDate].filter(Boolean).join(" - ");
 }
 
+/**
+ * Map stored item dates to values accepted by `<input type="month">`.
+ * Year-only values (e.g. AI-written `2020`) become `2020-01` so the control
+ * is not blank; valid `YYYY-MM` values pass through.
+ */
+export function toMonthInputValue(value?: string) {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) {
+    return "";
+  }
+
+  if (/^\d{4}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (/^\d{4}$/.test(trimmed)) {
+    return `${trimmed}-01`;
+  }
+
+  return "";
+}
+
 function bodyToLegacyItem(node: ResumeNode): ResumeNodeItem[] {
   if (!node.content.body?.trim()) {
     return [];

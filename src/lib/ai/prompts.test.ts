@@ -18,6 +18,10 @@ describe("systemPromptForMode", () => {
     const prompt = systemPromptForMode("edit", "zh-CN");
     expect(prompt).toContain("编辑");
     expect(prompt).toContain("propose_resume_patch");
+    expect(prompt).toContain("removeItemIds");
+    expect(prompt).toContain("replaceItems");
+    expect(prompt).toContain("YYYY-MM");
+    expect(prompt).toContain("不要在回复中用勾选符号声称已经删除");
   });
 
   it("returns plan drafting guidance for plan send", () => {
@@ -30,6 +34,8 @@ describe("systemPromptForMode", () => {
     const prompt = systemPromptForMode("plan", "en", "execute_plan");
     expect(prompt).toContain("计划执行");
     expect(prompt).toContain("propose_resume_patch");
+    expect(prompt).toContain("removeItemIds");
+    expect(prompt).toContain("replaceItems");
   });
 });
 
@@ -103,5 +109,7 @@ describe("approvedPlanExecutionPrompt", () => {
     expect(prompt).toContain("plan overview");
     expect(prompt).toContain("n1, n2");
     expect(prompt).toContain("none");
+    expect(prompt).toContain("removeItemIds");
+    expect(prompt).toContain("replaceItems");
   });
 });

@@ -8,6 +8,7 @@ import {
   applyResumePatches,
   extractJsonResponse,
   parseAiEditResponse,
+  resumePatchSchema,
 } from "./patch";
 
 function sampleResume(): ResumeWithNodes {
@@ -187,6 +188,213 @@ describe("applyResumePatches", () => {
     expect(updatedProject?.content.items?.[0]?.description).toBe(
       "- 使用 NLP 提升自动回复准确率",
     );
+  });
+
+  it("removes items listed in removeItemIds", () => {
+    const resume = sampleResume();
+    const education = resume.nodes.find((node) => node.type === "education");
+    expect(education).toBeDefined();
+
+    education!.content.items = [
+      {
+        id: "edu-legacy",
+        title: "Legacy School",
+        description: "old format",
+      },
+      {
+        id: "edu-structured",
+        title: "Structured School",
+        subtitle: "Bachelor",
+        startDate: "2016",
+        endDate: "2020",
+      },
+    ];
+
+    const updated = applyResumePatches(resume, [
+      {
+        op: "update_node",
+        nodeId: education!.id,
+        removeItemIds: ["edu-legacy"],
+      },
+    ]);
+    const updatedEducation = updated.nodes.find(
+      (node) => node.id === education!.id,
+    );
+
+    expect(updatedEducation?.content.items).toHaveLength(1);
+    expect(updatedEducation?.content.items?.[0]?.id).toBe("edu-structured");
+  });
+
+  it("replaces and reorders items when replaceItems is true", () => {
+    const resume = sampleResume();
+    const education = resume.nodes.find((node) => node.type === "education");
+    expect(education).toBeDefined();
+
+    education!.content.items = [
+      {
+        id: "edu-legacy",
+        title: "Legacy School",
+      },
+      {
+        id: "edu-bachelor",
+        title: "Bachelor School",
+        startDate: "2016",
+        endDate: "2020",
+      },
+    ];
+
+    const updated = applyResumePatches(resume, [
+      {
+        op: "update_node",
+        nodeId: education!.id,
+        replaceItems: true,
+        content: {
+          items: [
+            {
+              id: "edu-master",
+              title: "Master School",
+              startDate: "2021",
+              endDate: "2023",
+            },
+            {
+              id: "edu-bachelor",
+              title: "Bachelor School",
+              startDate: "2016",
+              endDate: "2020",
+            },
+          ],
+        },
+      },
+    ]);
+    const updatedEducation = updated.nodes.find(
+      (node) => node.id === education!.id,
+    );
+
+    expect(updatedEducation?.content.items?.map((item) => item.id)).toEqual([
+      "edu-master",
+      "edu-bachelor",
+    ]);
+  });
+
+  it("keeps omitted education items when upserting without removeItemIds or replaceItems", () => {
+    const resume = sampleResume();
+    const education = resume.nodes.find((node) => node.type === "education")!;
+    education.content.items = [
+      { id: "edu-legacy", title: "Legacy Hangzhou" },
+      { id: "edu-hzdu", title: "Hangzhou Dianzi", startDate: "2016", endDate: "2020" },
+    ];
+
+    const updated = applyResumePatches(resume, [
+      {
+        op: "update_node",
+        nodeId: education.id,
+        content: {
+          items: [
+            {
+              id: "edu-uts",
+              title: "UTS",
+              startDate: "2020",
+              endDate: "2022",
+            },
+          ],
+        },
+      },
+    ]);
+    const items = updated.nodes.find((node) => node.id === education.id)
+      ?.content.items;
+
+    expect(items?.map((item) => item.id)).toEqual([
+      "edu-legacy",
+      "edu-hzdu",
+      "edu-uts",
+    ]);
+  });
+
+  it("applies year-only startDate and endDate onto an existing education item", () => {
+    const resume = sampleResume();
+    const education = resume.nodes.find((node) => node.type === "education")!;
+    education.content.items = [
+      {
+        id: "edu-uts-ai-pm-master",
+        title: "UTS",
+        subtitle: "AI Project Management",
+        location: "Sydney",
+      },
+    ];
+
+    const updated = applyResumePatches(resume, [
+      {
+        op: "update_node",
+        nodeId: education.id,
+        content: {
+          items: [
+            {
+              id: "edu-uts-ai-pm-master",
+              title: "UTS",
+              startDate: "2020",
+              endDate: "2022",
+            },
+          ],
+        },
+      },
+    ]);
+    const item = updated.nodes.find((node) => node.id === education.id)
+      ?.content.items?.[0];
+
+    expect(item?.startDate).toBe("2020");
+    expect(item?.endDate).toBe("2022");
+  });
+
+  it("can remove a duplicate and update year-only dates in one patch", () => {
+    const resume = sampleResume();
+    const education = resume.nodes.find((node) => node.type === "education")!;
+    education.content.items = [
+      { id: "edu-legacy", title: "Legacy" },
+      {
+        id: "edu-uts",
+        title: "UTS",
+        location: "Sydney",
+      },
+    ];
+
+    const updated = applyResumePatches(resume, [
+      {
+        op: "update_node",
+        nodeId: education.id,
+        removeItemIds: ["edu-legacy"],
+        content: {
+          items: [
+            {
+              id: "edu-uts",
+              title: "UTS",
+              startDate: "2020",
+              endDate: "2022",
+            },
+          ],
+        },
+      },
+    ]);
+    const items = updated.nodes.find((node) => node.id === education.id)
+      ?.content.items;
+
+    expect(items).toHaveLength(1);
+    expect(items?.[0]?.id).toBe("edu-uts");
+    expect(items?.[0]?.startDate).toBe("2020");
+    expect(items?.[0]?.endDate).toBe("2022");
+  });
+
+  it("accepts removeItemIds and replaceItems on resumePatchSchema", () => {
+    const parsed = resumePatchSchema.safeParse({
+      op: "update_node",
+      nodeId: "node-1",
+      replaceItems: true,
+      removeItemIds: ["item-1"],
+      content: {
+        items: [{ id: "item-2", title: "Kept" }],
+      },
+    });
+
+    expect(parsed.success).toBe(true);
   });
 
   it("does not let empty AI patch fields clear existing profile fields", () => {

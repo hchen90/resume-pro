@@ -22,11 +22,23 @@ Query params `lang` and `ui`, plus cookies, control locale and theme (see [i18n-
 | Component | Role |
 |-----------|------|
 | `resume-workspace.tsx` | Three-pane layout: nodes, editor, preview; drag reorder; save/delete |
-| `node-editor.tsx` | Per-node-type form fields |
+| `node-editor.tsx` | Per-node-type form fields. Multi-item start/end dates use native `type="month"` pickers. Year-only stored values (e.g. `2020` from AI) are coerced to `YYYY-01` for display so the control is not blank. |
 | `resume-preview.tsx` | Live template preview |
 | `template-select.tsx` | Switch `templateId` |
 | `ai-panel.tsx` | AI modes and plan confirmation UI |
 | `print-button.tsx` | Link to download page |
+
+#### Form control constraints
+
+- Preserve semantic/native controls (`month`, `date`, `number`, `color`,
+  `email`, `url`, etc.); do not downgrade them to plain text just to accept an
+  incompatible stored value.
+- Normalize, migrate, or validate data at the boundary instead. For example,
+  adapt stored `YYYY` to `YYYY-01` for a month input.
+- Any intentional input-type change must account for accessibility, browser
+  behavior, persistence, AI-generated values, legacy data, and regression
+  tests. Canonical rule: `.agents/rules/resume-form-controls.md` (loaded via
+  `.claude/rules/` for Claude Code and `.cursor/rules/` for Cursor).
 
 ### System (`src/components/`)
 

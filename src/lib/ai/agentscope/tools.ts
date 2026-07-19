@@ -11,6 +11,7 @@ import {
 import {
   summarizePatches,
   validateResumePatches,
+  assertPatchMatchesMutationClaims,
 } from "@/lib/ai/patch-validate";
 import type { PendingPatchProposal } from "@/lib/ai/protocol";
 import {
@@ -100,7 +101,7 @@ export function createAssistantTools(context: AssistantRunContext): Tool[] {
   const proposeResumePatch: Tool = {
     name: "propose_resume_patch",
     description:
-      "Propose structured resume patches for user confirmation. Never apply patches yourself; the app saves only after the user confirms.",
+      "Propose structured resume patches for user confirmation. Never apply patches yourself; the app saves only after the user confirms. Multi-item nodes upsert items by default; use removeItemIds to delete items or replaceItems=true with a full content.items list to reorder/replace.",
     inputSchema: z.object({
       message: z.string().min(1),
       patches: z.array(resumePatchSchema).min(1),
@@ -122,6 +123,18 @@ export function createAssistantTools(context: AssistantRunContext): Tool[] {
         return toolJson({
           ok: false,
           error: context.lastToolError,
+        });
+      }
+
+      const intentError = assertPatchMatchesMutationClaims(
+        parsed.message,
+        validated.patches,
+      );
+      if (intentError) {
+        context.lastToolError = intentError;
+        return toolJson({
+          ok: false,
+          error: intentError,
         });
       }
 

@@ -112,14 +112,17 @@ Validation and resume existence checks happen before the first chunk. Mid-stream
 
 Defined in `resumePatchSchema` (`patch.ts`), with stricter runtime checks in `patch-validate.ts`:
 
-- `update_node` — target must exist; partial content only
+- `update_node` — target must exist; partial content only; multi-item nodes upsert `content.items` by id (add/update). Use `removeItemIds` to delete items, or `replaceItems: true` with a full `content.items` list to replace/reorder.
 - `create_node` — cannot create `profile`; optional `afterNodeId` must exist
 - `delete_node` — cannot delete `profile`; target must exist
 - `set_template` — must match the template registry
 
 ## Tests
 
-- `src/lib/ai/patch.test.ts` — patch merge and JSON extraction
-- `src/lib/ai/patch-validate.test.ts` — strict validation
+- `src/lib/ai/patch.test.ts` — patch merge, `removeItemIds` / `replaceItems`, year-only dates, JSON extraction
+- `src/lib/ai/patch-validate.test.ts` — strict validation and mutation-claim checks
+- `src/lib/ai/prompts.test.ts` — edit/plan prompt contracts for delete/reorder/date formats
 - `src/lib/ai/client/stream.test.ts` — NDJSON chunk parsing
 - `src/lib/ai/client/reducer.test.ts` — UI stream reducer
+- `src/lib/i18n.test.ts` — locale `itemDatePlaceholder` coverage
+- `src/lib/resume/format.test.ts` — year-only `itemDateRange` display

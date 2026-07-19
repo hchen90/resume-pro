@@ -31,6 +31,7 @@ make bullets more impactful, or emphasize measurable outcomes.
 - Existing multi-item nodes must be edited through `content.items`.
 - To update an existing item, preserve and send its real item `id`.
 - Send only changed fields and changed items.
+- To delete items, set `removeItemIds`. To reorder or fully rewrite items, set `replaceItems: true` with the complete final `content.items` list.
 - Use `propose_resume_patch`; never claim that a proposal has been saved.
 
 ## Output Quality

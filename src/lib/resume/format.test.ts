@@ -4,8 +4,10 @@ import { createNode } from "@/lib/resume/defaults";
 
 import {
   hasMeaningfulItems,
+  itemDateRange,
   nodeItems,
   normalizeMultiItemNode,
+  toMonthInputValue,
 } from "./format";
 
 describe("nodeItems", () => {
@@ -64,5 +66,47 @@ describe("normalizeMultiItemNode", () => {
         description: "Built internal tools",
       },
     ]);
+  });
+});
+
+describe("itemDateRange", () => {
+  it("renders year-only education dates for preview", () => {
+    expect(
+      itemDateRange({
+        id: "edu-uts",
+        title: "UTS",
+        startDate: "2020",
+        endDate: "2022",
+      }),
+    ).toBe("2020 - 2022");
+  });
+
+  it("renders month-precision dates", () => {
+    expect(
+      itemDateRange({
+        id: "exp-1",
+        title: "Acme",
+        startDate: "2024-01",
+        endDate: "2024-06",
+      }),
+    ).toBe("2024-01 - 2024-06");
+  });
+});
+
+describe("toMonthInputValue", () => {
+  it("passes through YYYY-MM values", () => {
+    expect(toMonthInputValue("2024-06")).toBe("2024-06");
+  });
+
+  it("coerces year-only values to January for month inputs", () => {
+    expect(toMonthInputValue("2020")).toBe("2020-01");
+    expect(toMonthInputValue("2022")).toBe("2022-01");
+  });
+
+  it("clears empty or incompatible values for month inputs", () => {
+    expect(toMonthInputValue("")).toBe("");
+    expect(toMonthInputValue("  ")).toBe("");
+    expect(toMonthInputValue("2020/01")).toBe("");
+    expect(toMonthInputValue(undefined)).toBe("");
   });
 });

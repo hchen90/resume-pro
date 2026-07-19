@@ -30,6 +30,7 @@ Define resume and node TypeScript types, Zod validation, default node factories,
 - **Profile fields**: `name`, `headline`, `email`, `phone`, `location`, `website`
 - **Body**: `body` (Markdown)
 - **List items**: `items[]` with `id`, `title`, `subtitle`, dates, location, `description`
+- **Item dates**: `startDate` / `endDate` are free-text strings; common forms are `YYYY` (education) and `YYYY-MM` (work/projects). The editor month picker coerces `YYYY` → `YYYY-01` for display.
 - **Skills**: `skills: string[]`
 
 ## Save semantics

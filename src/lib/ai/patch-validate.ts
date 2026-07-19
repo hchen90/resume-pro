@@ -4,6 +4,7 @@ import {
   resumePatchSchema,
   type ResumePatch,
 } from "@/lib/ai/patch";
+import { nodeItems } from "@/lib/resume/format";
 import { resumeNodeContentSchema } from "@/lib/resume/validation";
 import type { ResumeWithNodes } from "@/lib/resume/types";
 import { resumeTemplates } from "@/templates/resume/registry";
@@ -19,6 +20,8 @@ const strictResumePatchSchema = z.discriminatedUnion("op", [
     title: z.string().min(1).optional(),
     content: strictNodeContentSchema.optional(),
     enabled: z.boolean().optional(),
+    replaceItems: z.boolean().optional(),
+    removeItemIds: z.array(z.string().min(1)).optional(),
   }),
   z.object({
     op: z.literal("create_node"),
@@ -93,6 +96,33 @@ export function validateResumePatches(
         });
         return;
       }
+
+      const targetNode = resume.nodes.find((node) => node.id === patch.nodeId);
+      if (
+        patch.replaceItems &&
+        (!patch.content?.items || patch.content.items.length === 0)
+      ) {
+        issues.push({
+          index,
+          message:
+            "update_node with replaceItems=true requires a non-empty content.items array.",
+        });
+        return;
+      }
+
+      if (patch.removeItemIds?.length && targetNode) {
+        const knownItemIds = new Set(
+          nodeItems(targetNode).map((item) => item.id),
+        );
+        const unknown = patch.removeItemIds.filter((id) => !knownItemIds.has(id));
+        if (unknown.length > 0) {
+          issues.push({
+            index,
+            message: `removeItemIds not found on node: ${unknown.join(", ")}.`,
+          });
+          return;
+        }
+      }
     }
 
     if (patch.op === "delete_node") {
@@ -139,6 +169,42 @@ export function validateResumePatches(
   }
 
   return { ok: true, patches };
+}
+
+/**
+ * Reject proposals whose natural-language message claims delete/reorder
+ * but whose patches only upsert items (which cannot delete or reorder).
+ */
+export function assertPatchMatchesMutationClaims(
+  message: string,
+  patches: ResumePatch[],
+): string | null {
+  const claimsDelete =
+    /删除|删掉|移除|去重|重复项|delete\b|remove\b|dedup/i.test(message);
+  const claimsReorder =
+    /调整顺序|重排|排序|倒序|时间倒序|reorder|re-?order|chronolog/i.test(
+      message,
+    );
+
+  const hasItemDeleteOrReplace = patches.some(
+    (patch) =>
+      patch.op === "delete_node" ||
+      (patch.op === "update_node" &&
+        ((patch.removeItemIds?.length ?? 0) > 0 || patch.replaceItems === true)),
+  );
+  const hasReplaceItems = patches.some(
+    (patch) => patch.op === "update_node" && patch.replaceItems === true,
+  );
+
+  if (claimsDelete && !hasItemDeleteOrReplace) {
+    return "Message describes deleting or deduplicating items, but patches lack removeItemIds or replaceItems:true. Default item merge cannot delete. Resubmit with removeItemIds for the ids to remove, or replaceItems:true with the full final content.items list.";
+  }
+
+  if (claimsReorder && !hasReplaceItems) {
+    return "Message describes reordering items, but patches lack replaceItems:true. Resubmit with replaceItems:true and content.items in the final order (include every item id to keep).";
+  }
+
+  return null;
 }
 
 export function summarizePatches(

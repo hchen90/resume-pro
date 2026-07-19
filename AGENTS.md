@@ -44,6 +44,7 @@ drizzle/           # ORM migrations
 - **Saving resumes**: `saveResume` replaces all nodes; PATCH must send the full `nodes` array.
 - **AI**: Requires `AI_API_KEY`; when missing, APIs return a friendly message (not 500). The assistant uses AgentScope in Node.js routes (`src/lib/ai/agentscope/`) and streams NDJSON events. AgentScope skills live under `skills/resume-assistant/<name>/SKILL.md`; they provide guidance but cannot bypass mode or patch-confirmation rules. Edit/Plan produce confirmable proposals; patches still validate through `src/lib/ai/patch.ts` + `patch-validate.ts`. Job Match still uses LangChain.
 - **i18n**: New UI strings must be added to every locale in `dictionaries` in `src/lib/i18n.ts`.
+- **Form controls**: Preserve semantic/native input types; fix incompatible stored values through normalization or validation instead of downgrading controls to plain text. Canonical rule: `.agents/rules/resume-form-controls.md` (Claude Code: `.claude/rules/`; Cursor: `.cursor/rules/`).
 - **Links**: Internal navigation should include `settingsQuery({ lang, style })` to preserve locale and theme.
 - **Tests**: `npm run test` (Vitest); `npm run test:coverage` enforces ≥90% coverage on `src/lib/ai/**` (AgentScope adapter under `src/lib/ai/agentscope/**` is excluded). Extend tests when changing patch, AI, or registry logic.
 
