@@ -162,6 +162,7 @@ export function AiPanel({
   const [selectedPlanStepIds, setSelectedPlanStepIds] = useState<string[]>([]);
   const [pendingProposal, setPendingProposal] =
     useState<PendingPatchProposal | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
   const [streamState, setStreamState] = useState<AssistantUiState>(
     createInitialAssistantUiState(),
   );
@@ -223,6 +224,7 @@ export function AiPanel({
         setPendingProposal(session.pendingProposal);
         setChatSummary(session.summary);
         setSessionVersion(session.sessionVersion);
+        setCanUndo(session.canUndo);
       })
       .catch(() => {
         if (cancelled || sessionVersionRef.current !== version) {
@@ -237,6 +239,7 @@ export function AiPanel({
         setPendingProposal(fallback.pendingProposal);
         setChatSummary(fallback.summary);
         setSessionVersion(fallback.sessionVersion);
+        setCanUndo(fallback.canUndo);
       })
       .finally(() => {
         if (!cancelled && sessionVersionRef.current === version) {
@@ -451,6 +454,7 @@ export function AiPanel({
           setChatSummary(session.summary);
           setSessionVersion(session.sessionVersion);
           setMode(session.mode);
+          setCanUndo(session.canUndo);
         } else if (assistantMessage) {
           setMessages((current) => [...current, assistantMessage]);
           if (nextState.pendingPlan) {
@@ -590,6 +594,7 @@ export function AiPanel({
           summary: string | null;
           sessionVersion: number;
           mode: AiMode;
+          canUndo?: boolean;
         };
       };
 
@@ -605,8 +610,81 @@ export function AiPanel({
         setChatSummary(payload.session.summary);
         setSessionVersion(payload.session.sessionVersion);
         setMode(payload.session.mode);
+        setCanUndo(Boolean(payload.session.canUndo));
       } else {
         setPendingProposal(null);
+      }
+
+      if (payload.resume) {
+        onResumeUpdated(payload.resume);
+      }
+    } catch (error) {
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: formatRequestError(error),
+          isError: true,
+        },
+      ]);
+    } finally {
+      finishAiRequest();
+      setIsLoading(false);
+    }
+  }
+
+  async function undoLastAiApply() {
+    if (!canUndo || isLoading) {
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadingPhase("edit");
+    const controller = beginAiRequest("edit");
+
+    try {
+      const response = await fetch("/api/ai/undo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          resumeId: resume.id,
+          locale,
+          expectedUpdatedAt: resume.updatedAt,
+        }),
+      });
+
+      const payload = (await response.json()) as {
+        message?: string;
+        error?: boolean;
+        resume?: ResumeWithNodes;
+        session?: {
+          messages: AiMessage[];
+          pendingPlan: AiPendingPlan | null;
+          selectedPlanStepIds: string[];
+          pendingProposal: PendingPatchProposal | null;
+          summary: string | null;
+          sessionVersion: number;
+          mode: AiMode;
+          canUndo?: boolean;
+        };
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.message ?? t.aiError);
+      }
+
+      if (payload.session) {
+        setMessages(payload.session.messages);
+        setPendingPlan(payload.session.pendingPlan);
+        setSelectedPlanStepIds(payload.session.selectedPlanStepIds);
+        setPendingProposal(payload.session.pendingProposal);
+        setChatSummary(payload.session.summary);
+        setSessionVersion(payload.session.sessionVersion);
+        setMode(payload.session.mode);
+        setCanUndo(Boolean(payload.session.canUndo));
+      } else {
+        setCanUndo(false);
       }
 
       if (payload.resume) {
@@ -776,6 +854,19 @@ export function AiPanel({
           onConfirm={() => void decideProposal("confirm")}
           onReject={() => void decideProposal("reject")}
         />
+      ) : null}
+
+      {!pendingProposal && canUndo ? (
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => void undoLastAiApply()}
+            disabled={isLoading}
+            className="w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs font-semibold text-[var(--app-muted)] transition hover:bg-[var(--app-muted-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t.aiUndoLastApply}
+          </button>
+        </div>
       ) : null}
 
       {pendingPlan && !pendingProposal ? (

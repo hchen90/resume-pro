@@ -418,14 +418,23 @@ function mergeNodePatch(
     let nextItems = existingItems;
 
     if (patch.replaceItems && patchItems) {
-      nextItems = patchItems.map((item) => ({
-        id:
+      // Reorder/replace list membership by the patch item order, but merge each
+      // known id with the existing item so omitted fields are not wiped.
+      nextItems = patchItems.map((item) => {
+        const patchId =
           typeof item.id === "string" && item.id.trim()
             ? item.id.trim()
-            : crypto.randomUUID(),
-        title: item.title ?? "",
-        ...withoutEmptyItemPatchValues(item),
-      }));
+            : crypto.randomUUID();
+        const existing = existingItems.find((entry) => entry.id === patchId);
+        if (existing) {
+          return mergeItemPatch(existing, { ...item, id: patchId });
+        }
+        return {
+          id: patchId,
+          title: item.title ?? "",
+          ...withoutEmptyItemPatchValues(item),
+        };
+      });
     } else if (patchItems?.length) {
       nextItems = mergeItemsPatch(existingItems, patchItems);
     }

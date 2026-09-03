@@ -240,6 +240,7 @@ describe("applyResumePatches", () => {
         title: "Bachelor School",
         startDate: "2016",
         endDate: "2020",
+        description: "kept description",
       },
     ];
 
@@ -274,6 +275,68 @@ describe("applyResumePatches", () => {
       "edu-master",
       "edu-bachelor",
     ]);
+    expect(updatedEducation?.content.items?.[1]?.description).toBe(
+      "kept description",
+    );
+  });
+
+  it("preserves omitted item fields when replaceItems only reorders by id/title", () => {
+    const resume = sampleResume();
+    const experience = resume.nodes.find((node) => node.type === "experience")!;
+    experience.content.items = [
+      {
+        id: "exp-a",
+        title: "Company A",
+        subtitle: "Engineer",
+        startDate: "2020-01",
+        endDate: "2021-01",
+        location: "Shanghai",
+        description: "Built APIs",
+      },
+      {
+        id: "exp-b",
+        title: "Company B",
+        subtitle: "Lead",
+        startDate: "2021-02",
+        endDate: "2024-06",
+        description: "Led team",
+      },
+    ];
+
+    const updated = applyResumePatches(resume, [
+      {
+        op: "update_node",
+        nodeId: experience.id,
+        replaceItems: true,
+        content: {
+          items: [
+            { id: "exp-b", title: "Company B" },
+            { id: "exp-a", title: "Company A" },
+          ],
+        },
+      },
+    ]);
+    const items = updated.nodes.find((node) => node.id === experience.id)
+      ?.content.items;
+
+    expect(items?.map((item) => item.id)).toEqual(["exp-b", "exp-a"]);
+    expect(items?.[0]).toMatchObject({
+      id: "exp-b",
+      title: "Company B",
+      subtitle: "Lead",
+      startDate: "2021-02",
+      endDate: "2024-06",
+      description: "Led team",
+    });
+    expect(items?.[1]).toMatchObject({
+      id: "exp-a",
+      title: "Company A",
+      subtitle: "Engineer",
+      startDate: "2020-01",
+      endDate: "2021-01",
+      location: "Shanghai",
+      description: "Built APIs",
+    });
   });
 
   it("keeps omitted education items when upserting without removeItemIds or replaceItems", () => {

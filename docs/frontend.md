@@ -26,7 +26,12 @@ Query params `lang` and `ui`, plus cookies, control locale and theme (see [i18n-
 | `resume-preview.tsx` | Live template preview |
 | `template-select.tsx` | Switch `templateId` |
 | `ai-panel.tsx` | AI modes and plan confirmation UI |
+| `ai-proposal-review.tsx` | Pending proposal summary + confirm/reject (counts/titles only today) |
 | `print-button.tsx` | Link to download page |
+
+**Planned UI** (iteration — not shipped): before/after comparison and Git commit
+hash display for AI changes. See
+[ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented).
 
 #### Form control constraints
 

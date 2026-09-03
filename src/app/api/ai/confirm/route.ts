@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   createDefaultAiChatSession,
   normalizeAiChatSession,
+  resumeToSaveInput,
 } from "@/lib/ai/chat-session";
 import { applyResumePatches } from "@/lib/ai/patch";
 import { validateResumePatches } from "@/lib/ai/patch-validate";
@@ -20,6 +21,16 @@ import {
 import { dictionaries, resolveLocale } from "@/lib/i18n";
 
 export const runtime = "nodejs";
+
+function toClientSession<T extends { undoSnapshot: unknown; canUndo?: boolean }>(
+  session: T,
+) {
+  const { undoSnapshot, ...rest } = session;
+  return {
+    ...rest,
+    canUndo: undoSnapshot != null || session.canUndo === true,
+  };
+}
 
 export async function POST(request: Request) {
   let locale = resolveLocale(undefined);
@@ -70,7 +81,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: true,
         decision: "reject",
-        session: saved,
+        session: toClientSession(saved),
       });
     }
 
@@ -139,11 +150,12 @@ export async function POST(request: Request) {
         pendingProposal: null,
         pendingPlan: null,
         selectedPlanStepIds: [],
+        undoSnapshot: resumeToSaveInput(input.resumeSnapshot),
         messages: [
           ...session.messages,
           {
             role: "assistant",
-            content: t.aiProposalApplied,
+            content: `${t.aiProposalApplied}\n\n${t.aiUndoHint}`,
           },
         ],
       },
@@ -155,7 +167,7 @@ export async function POST(request: Request) {
       ok: true,
       decision: "confirm",
       resume: updatedResume,
-      session: saved,
+      session: toClientSession(saved),
       patches: validated.patches,
     });
   } catch (error) {

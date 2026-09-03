@@ -17,6 +17,7 @@ Job Match continues to use LangChain `ChatOpenAI` separately.
 | `src/lib/ai/snapshot.ts` | Editor snapshot hashing for conflict detection |
 | `src/app/api/ai/route.ts` | Streaming `POST` entry point (NDJSON) |
 | `src/app/api/ai/confirm/route.ts` | Confirm/reject patch proposals |
+| `src/app/api/ai/undo/route.ts` | One-shot undo of the last confirmed AI apply |
 | `src/app/api/ai/chat/route.ts` | Session load / lightweight UI-state sync |
 | `src/components/resume/ai-panel.tsx` | Streaming assistant UI |
 
@@ -107,12 +108,35 @@ Validation and resume existence checks happen before the first chunk. Mid-stream
 2. User confirms via `POST /api/ai/confirm`.
 3. Server re-validates patches, checks snapshot hash + DB optimistic lock, then transactionally saves.
 4. Conflicts return `409` without overwriting newer edits.
+5. On successful confirm, the pre-confirm resume is stored for one-shot undo; the assistant UI offers **Undo last AI change**.
+6. `POST /api/ai/undo` restores that snapshot (then clears undo). Conflicts return `409` if the resume changed again.
+
+## Iteration plan (not yet implemented)
+
+Tracked as OpenSpec change
+[`plan-ai-change-artifacts-diff-git`](../openspec/changes/plan-ai-change-artifacts-diff-git/).
+Current behavior vs planned product direction:
+
+| Topic | Current | Planned |
+|-------|---------|---------|
+| **生成产物** | AI Edit/Plan yields a transient `pending_proposal` on the chat session; not a first-class generated artifact with durable identity/history | Model AI changes as **generated artifacts** (`pending` / `applied` / `rejected` / `undone`) queryable after the pending proposal clears |
+| **修改前后对比** | Proposal review shows summary counts, message, and affected titles only (`ai-proposal-review.tsx`) | Before/after reference comparison for affected nodes/fields on confirm review and in applied history |
+| **更新文档 + Git 版本** | Confirm stores a one-shot undo snapshot in SQLite (`agent_state.undoSnapshot`); no Git history or commit hash in the UI | Persist AI update docs in **local document storage**; version with **Git** in a dedicated local repo (not the product source tree); **show commit hash** in the UI |
+
+Phased delivery (see change `design.md` / `tasks.md`):
+
+1. Document this plan (this section).
+2. Artifact model + dual-write alongside existing confirm/undo.
+3. Before/after diff UI (dry-run patches; no Git required).
+4. Local update documents + Git commits + hash display; Git failure must not fail confirm.
+
+Until those tasks ship, confirm/reject/undo behavior above remains the source of truth.
 
 ## Patch protocol
 
 Defined in `resumePatchSchema` (`patch.ts`), with stricter runtime checks in `patch-validate.ts`:
 
-- `update_node` — target must exist; partial content only; multi-item nodes upsert `content.items` by id (add/update). Use `removeItemIds` to delete items, or `replaceItems: true` with a full `content.items` list to replace/reorder.
+- `update_node` — target must exist; partial content only; multi-item nodes upsert `content.items` by id (add/update). Use `removeItemIds` to delete items, or `replaceItems: true` with an ordered `content.items` list to replace/reorder. For known item ids, omitted fields are **merged/preserved** (reorder-only patches must not wipe titles, dates, or descriptions).
 - `create_node` — cannot create `profile`; optional `afterNodeId` must exist
 - `delete_node` — cannot delete `profile`; target must exist
 - `set_template` — must match the template registry

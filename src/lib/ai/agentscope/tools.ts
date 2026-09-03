@@ -101,7 +101,7 @@ export function createAssistantTools(context: AssistantRunContext): Tool[] {
   const proposeResumePatch: Tool = {
     name: "propose_resume_patch",
     description:
-      "Propose structured resume patches for user confirmation. Never apply patches yourself; the app saves only after the user confirms. Multi-item nodes upsert items by default; use removeItemIds to delete items or replaceItems=true with a full content.items list to reorder/replace.",
+      "Propose structured resume patches for user confirmation. Never apply patches yourself; the app saves only after the user confirms. Multi-item nodes upsert items by default; use removeItemIds to delete items or replaceItems=true with ordered content.items (id required; omitted fields are preserved on existing ids) to reorder/replace.",
     inputSchema: z.object({
       message: z.string().min(1),
       patches: z.array(resumePatchSchema).min(1),

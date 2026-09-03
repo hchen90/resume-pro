@@ -20,6 +20,7 @@ describe("systemPromptForMode", () => {
     expect(prompt).toContain("propose_resume_patch");
     expect(prompt).toContain("removeItemIds");
     expect(prompt).toContain("replaceItems");
+    expect(prompt).toContain("未写出的字段会保留原值");
     expect(prompt).toContain("YYYY-MM");
     expect(prompt).toContain("不要在回复中用勾选符号声称已经删除");
   });

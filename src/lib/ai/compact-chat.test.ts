@@ -52,6 +52,8 @@ function session(messages: AiMessage[]): AiChatSession {
     summary: null,
     sessionVersion: 0,
     lastRunId: null,
+    undoSnapshot: null,
+    canUndo: false,
   };
 }
 

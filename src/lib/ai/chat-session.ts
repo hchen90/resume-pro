@@ -1,6 +1,7 @@
 import { aiPlanSchema, type AiPlan } from "@/lib/ai/patch";
 import type { PendingPatchProposal } from "@/lib/ai/protocol";
 import { aiModes, type AiMessage, type AiMode } from "@/lib/ai/types";
+import type { ResumeSaveInput } from "@/lib/resume/types";
 
 export type AiPendingPlan = {
   originalMessage: string;
@@ -16,6 +17,10 @@ export type AiChatSession = {
   summary: string | null;
   sessionVersion: number;
   lastRunId: string | null;
+  /** Pre-confirm resume payload for one-shot undo after AI apply. */
+  undoSnapshot: ResumeSaveInput | null;
+  /** Client hint when undoSnapshot is stripped from API responses. */
+  canUndo: boolean;
 };
 
 export function createDefaultAiChatSession(introContent: string): AiChatSession {
@@ -28,7 +33,60 @@ export function createDefaultAiChatSession(introContent: string): AiChatSession 
     summary: null,
     sessionVersion: 0,
     lastRunId: null,
+    undoSnapshot: null,
+    canUndo: false,
   };
+}
+
+export function resumeToSaveInput(resume: {
+  title: string;
+  templateId: string;
+  fontPreset: string;
+  nodes: Array<{
+    id: string;
+    type: ResumeSaveInput["nodes"][number]["type"];
+    title: string;
+    content: ResumeSaveInput["nodes"][number]["content"];
+    sortOrder: number;
+    enabled: boolean;
+  }>;
+}): ResumeSaveInput {
+  return {
+    title: resume.title,
+    templateId: resume.templateId,
+    fontPreset: resume.fontPreset,
+    nodes: resume.nodes.map((node) => ({
+      id: node.id,
+      type: node.type,
+      title: node.title,
+      content: node.content,
+      sortOrder: node.sortOrder,
+      enabled: node.enabled,
+    })),
+  };
+}
+
+function normalizeUndoSnapshot(value: unknown): ResumeSaveInput | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const candidate = value as Partial<ResumeSaveInput>;
+  if (
+    typeof candidate.title !== "string" ||
+    typeof candidate.templateId !== "string" ||
+    typeof candidate.fontPreset !== "string" ||
+    !Array.isArray(candidate.nodes)
+  ) {
+    return null;
+  }
+
+  return resumeToSaveInput({
+    title: candidate.title,
+    templateId: candidate.templateId,
+    fontPreset: candidate.fontPreset,
+    nodes: candidate.nodes as ResumeSaveInput["nodes"],
+  });
 }
 
 function isValidMessage(value: unknown): value is AiMessage {
@@ -136,6 +194,9 @@ export function normalizeAiChatSession(
       ? raw.lastRunId
       : null;
 
+  const undoSnapshot = normalizeUndoSnapshot(raw.undoSnapshot);
+  const canUndo = undoSnapshot !== null || raw.canUndo === true;
+
   return {
     messages: messages.length > 0 ? messages : defaults.messages,
     mode,
@@ -149,6 +210,8 @@ export function normalizeAiChatSession(
     summary,
     sessionVersion,
     lastRunId,
+    undoSnapshot,
+    canUndo,
   };
 }
 

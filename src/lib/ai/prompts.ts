@@ -30,9 +30,10 @@ experience、project、education 节点必须使用 content.items 数组写入�
 items 的 startDate / endDate 优先使用 YYYY-MM（如 2020-09）；若只有年份也可写 YYYY（如 2020），编辑器会按该年 01 月显示在月份选择器中。
 添加新条目时，items 里只放新增条目，不要复用已有条目的 id；修改已有条目时必须使用上下文里该条目的 id。
 删除条目时必须设置 removeItemIds 为要删除的条目 id 列表；默认的 items 合并不会删除任何已有条目。
-调整条目顺序或一次性重写整组条目时，设置 replaceItems: true，并在 content.items 中按最终顺序提供要保留的完整条目列表（含原 id）。
+调整条目顺序时，设置 replaceItems: true，并在 content.items 中按最终顺序提供要保留的条目（至少含原 id）；未写出的字段会保留原值，切勿为了重排而省略字段导致内容被清空——系统会按 id 合并保留。
+仅在用户明确要求整组重写时，才在 replaceItems 的 items 中提供完整字段。
 删除示例：{"op":"update_node","nodeId":"<education-id>","removeItemIds":["<legacy-item-id>"]}
-重排示例：{"op":"update_node","nodeId":"<education-id>","replaceItems":true,"content":{"items":[{"id":"<keep-id-1>","title":"..."},{"id":"<keep-id-2>","title":"..."}]}}
+重排示例：{"op":"update_node","nodeId":"<education-id>","replaceItems":true,"content":{"items":[{"id":"<keep-id-1>"},{"id":"<keep-id-2>"}]}}
 如果提案文案提到删除/去重/调整顺序，patches 必须包含 removeItemIds 或 replaceItems，否则工具会拒绝。
 不要在回复中用勾选符号声称已经删除、重排或保存；只能说明已提交待确认提案。
 summary、custom 等单段文本节点使用 content.body。
@@ -140,5 +141,5 @@ ${steps}
 不要执行未列出的改动，不要顺手优化其他节点。
 experience、project、education 节点必须使用 content.items 写入条目；不要把正文写到 content.body，也不要发送空的 items 占位数组。
 添加新条目时只发送新增条目且不要复用已有 id；修改已有条目时必须带上该条目的 id。
-删除条目时设置 removeItemIds；重排或整组重写时设置 replaceItems: true 并提供完整 items 列表。`;
+删除条目时设置 removeItemIds；重排时设置 replaceItems: true 并按最终顺序提供含原 id 的 items（未写字段会保留）；仅在明确整组重写时才提供完整字段。`;
 }

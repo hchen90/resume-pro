@@ -32,8 +32,22 @@ Streaming resume assistant powered by AgentScope. See [ai.md](./ai.md).
 Confirm or reject a pending patch proposal.
 
 - **Body**: `resumeId`, `proposalId`, `decision` (`confirm` \| `reject`), `resumeSnapshot`, optional `locale`
-- **Response**: `{ ok, decision, resume?, session? }`
+- **Response**: `{ ok, decision, resume?, session? }` (`session.canUndo` is true after a successful confirm)
 - **409**: snapshot or resume version conflict
+
+### `POST /api/ai/undo`
+
+Restore the resume to the snapshot saved just before the last confirmed AI apply (one-shot).
+
+- **Body**: `resumeId`, optional `locale`, optional `expectedUpdatedAt`
+- **Response**: `{ ok, resume, session }`
+- **404**: no undo snapshot
+- **409**: resume version conflict
+
+**Planned** (iteration — not shipped): durable AI change artifacts, before/after
+diff APIs, and Git commit-hash metadata. See
+[ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented) and OpenSpec
+`plan-ai-change-artifacts-diff-git`.
 
 ### `GET /api/ai/chat?resumeId=&locale=`
 

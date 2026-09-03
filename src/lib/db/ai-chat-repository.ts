@@ -90,6 +90,9 @@ export async function saveAiChatSession(
     pendingProposal: normalized.pendingProposal,
     sessionVersion: nextVersion,
     lastRunId: normalized.lastRunId,
+    agentState: normalized.undoSnapshot
+      ? { undoSnapshot: normalized.undoSnapshot }
+      : null,
     updatedAt: timestamp,
   };
 
@@ -114,7 +117,6 @@ export async function saveAiChatSession(
       .values({
         ...value,
         agentContext: existing?.agentContext ?? null,
-        agentState: existing?.agentState ?? null,
       })
       .onConflictDoUpdate({
         target: sqliteSchema.aiChatSessions.resumeId,
@@ -127,6 +129,7 @@ export async function saveAiChatSession(
           pendingProposal: value.pendingProposal,
           sessionVersion: value.sessionVersion,
           lastRunId: value.lastRunId,
+          agentState: value.agentState,
           updatedAt: value.updatedAt,
         },
       })
@@ -165,10 +168,8 @@ export async function saveAiChatSession(
             ? existing.agentContext
             : JSON.stringify(existing.agentContext)
           : null,
-        agentState: existing?.agentState
-          ? typeof existing.agentState === "string"
-            ? existing.agentState
-            : JSON.stringify(existing.agentState)
+        agentState: value.agentState
+          ? JSON.stringify(value.agentState)
           : null,
       })
       .onConflictDoUpdate({
@@ -186,6 +187,9 @@ export async function saveAiChatSession(
             : null,
           sessionVersion: value.sessionVersion,
           lastRunId: value.lastRunId,
+          agentState: value.agentState
+            ? JSON.stringify(value.agentState)
+            : null,
           updatedAt: value.updatedAt,
         },
       });
@@ -198,6 +202,8 @@ export async function saveAiChatSession(
 }
 
 function rowToSession(row: AiChatSessionRow, introContent: string): AiChatSession {
+  const agentState = parseJsonValue<{ undoSnapshot?: unknown }>(row.agentState);
+
   return normalizeAiChatSession(
     {
       messages: parseJsonArray<AiMessage>(row.messages),
@@ -208,6 +214,8 @@ function rowToSession(row: AiChatSessionRow, introContent: string): AiChatSessio
       pendingProposal: parseJsonValue<PendingPatchProposal>(row.pendingProposal),
       sessionVersion: row.sessionVersion ?? 0,
       lastRunId: row.lastRunId,
+      undoSnapshot: (agentState?.undoSnapshot ??
+        null) as AiChatSession["undoSnapshot"],
     },
     introContent,
   );

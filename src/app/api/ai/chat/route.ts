@@ -57,8 +57,14 @@ export async function GET(request: Request) {
 
   const stored = await getAiChatSession(resumeId, intro);
   const session = stored ?? normalizeAiChatSession(null, intro);
+  const { undoSnapshot, ...rest } = session;
 
-  return NextResponse.json({ session });
+  return NextResponse.json({
+    session: {
+      ...rest,
+      canUndo: undoSnapshot != null || session.canUndo,
+    },
+  });
 }
 
 export async function PUT(request: Request) {
@@ -89,6 +95,7 @@ export async function PUT(request: Request) {
         summary: existing?.summary ?? null,
         sessionVersion: existing?.sessionVersion ?? 0,
         lastRunId: existing?.lastRunId ?? null,
+        undoSnapshot: existing?.undoSnapshot ?? null,
       },
       intro,
     );
@@ -111,7 +118,13 @@ export async function PUT(request: Request) {
       expectedSessionVersion:
         input.expectedSessionVersion ?? existing?.sessionVersion,
     });
-    return NextResponse.json({ session: saved });
+    const { undoSnapshot, ...rest } = saved;
+    return NextResponse.json({
+      session: {
+        ...rest,
+        canUndo: undoSnapshot != null || saved.canUndo,
+      },
+    });
   } catch (error) {
     if (error instanceof SessionVersionConflictError) {
       return NextResponse.json(
