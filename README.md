@@ -2,7 +2,7 @@
 
 Resume Pro is an open-source, local-first AI resume editor for managing resumes, previewing multiple templates, improving content with AI, and scoring resume fit against job descriptions.
 
-[Watch the introduction video](https://github.com/user-attachments/assets/4882beb8-16af-4e7c-8986-d2be5c994c0b)
+[Watch the introduction video](https://github.com/user-attachments/assets/a5880014-a568-4bf1-9fad-e4c14f4e2fd4)
 
 ## Highlights
 
