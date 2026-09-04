@@ -541,7 +541,6 @@ export function ResumeWorkspace({
         ) : null}
         <ResumePreview
           resume={resume}
-          locale={locale}
           labels={{
             fit: t.previewFit,
             zoomIn: t.previewZoomIn,

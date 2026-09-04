@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { AiChangeArtifactStatus } from "@/lib/ai/change-artifact";
 import type { AiChangeFieldDiff } from "@/lib/ai/change-diff";
@@ -15,6 +15,12 @@ type ArtifactListItem = {
   shortCommitHash: string | null;
   commitHash: string | null;
   updatedAt: string;
+};
+
+type ArtifactDetail = {
+  id: string;
+  diffs: AiChangeFieldDiff[];
+  commit: string | null;
 };
 
 type AiChangeHistoryProps = {
@@ -46,31 +52,42 @@ export function AiChangeHistory({
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<ArtifactListItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [diffs, setDiffs] = useState<AiChangeFieldDiff[]>([]);
-  const [detailCommit, setDetailCommit] = useState<string | null>(null);
-
-  const loadList = useCallback(async () => {
-    const response = await fetch(
-      `/api/ai/artifacts?resumeId=${encodeURIComponent(resumeId)}`,
-    );
-    if (!response.ok) {
-      setItems([]);
-      return;
-    }
-    const payload = (await response.json()) as { artifacts: ArtifactListItem[] };
-    setItems(
-      (payload.artifacts ?? []).filter((item) => item.status !== "pending"),
-    );
-  }, [resumeId]);
+  const [detail, setDetail] = useState<ArtifactDetail | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadList() {
+      const response = await fetch(
+        `/api/ai/artifacts?resumeId=${encodeURIComponent(resumeId)}`,
+      );
+      if (cancelled) {
+        return;
+      }
+      if (!response.ok) {
+        setItems([]);
+        return;
+      }
+      const payload = (await response.json()) as {
+        artifacts: ArtifactListItem[];
+      };
+      if (cancelled) {
+        return;
+      }
+      setItems(
+        (payload.artifacts ?? []).filter((item) => item.status !== "pending"),
+      );
+    }
+
     void loadList();
-  }, [loadList, refreshKey]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resumeId, refreshKey]);
 
   useEffect(() => {
     if (!selectedId) {
-      setDiffs([]);
-      setDetailCommit(null);
       return;
     }
 
@@ -91,15 +108,16 @@ export function AiChangeHistory({
         if (cancelled || !payload) {
           return;
         }
-        setDiffs(payload.diffs ?? []);
-        setDetailCommit(
-          payload.artifact.shortCommitHash ?? payload.artifact.commitHash,
-        );
+        setDetail({
+          id: selectedId,
+          diffs: payload.diffs ?? [],
+          commit:
+            payload.artifact.shortCommitHash ?? payload.artifact.commitHash,
+        });
       })
       .catch(() => {
         if (!cancelled) {
-          setDiffs([]);
-          setDetailCommit(null);
+          setDetail({ id: selectedId, diffs: [], commit: null });
         }
       });
 
@@ -107,6 +125,8 @@ export function AiChangeHistory({
       cancelled = true;
     };
   }, [resumeId, selectedId]);
+
+  const activeDetail = detail?.id === selectedId ? detail : null;
 
   return (
     <div className="mt-3">
@@ -157,11 +177,11 @@ export function AiChangeHistory({
             <div className="mt-3 border-t border-[var(--app-border)] pt-2">
               <p className="text-xs font-semibold text-[var(--app-text)]">
                 {labels.aiChangeComparison}
-                {detailCommit
-                  ? ` · ${labels.aiChangeCommitHash} ${detailCommit}`
+                {activeDetail?.commit
+                  ? ` · ${labels.aiChangeCommitHash} ${activeDetail.commit}`
                   : ""}
               </p>
-              <DiffList diffs={diffs} labels={labels} />
+              <DiffList diffs={activeDetail?.diffs ?? []} labels={labels} />
             </div>
           ) : null}
         </div>
