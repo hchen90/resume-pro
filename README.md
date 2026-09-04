@@ -7,6 +7,8 @@ Resume Pro is an open-source, local-first AI resume editor for managing resumes,
 ## Highlights
 
 - Local-first by default, using SQLite out of the box with optional Postgres support.
+  (**Planned:** workspace folder + isomorphic-git replaces DB for resume/JD
+  documents — see [docs/workspace.md](./docs/workspace.md).)
 - Structured resume editing across personal information, summary, work experience, projects, education, skills, and other sections.
 - Seven built-in templates: Classic, Modern, Compact, Elegant, Timeline, Creative, and Academic.
 - Live preview, resume font selection, section reordering, and print/PDF export.

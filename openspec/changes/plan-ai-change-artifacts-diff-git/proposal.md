@@ -23,6 +23,11 @@ UI. Users cannot treat AI updates as versioned, comparable products.
 - This change is planning-first: artifacts capture the roadmap; implementation
   tasks may ship in later apply passes.
 
+**Supersession (storage):** Git versioning for user documents (including AI
+applies) is now owned by OpenSpec `workspace-git-storage` / [docs/workspace.md](../../../docs/workspace.md)
+(workspace folder + isomorphic-git). This change keeps **生成产物** identity and
+**before/after diff** UX; do not invent a separate AI-only Git repo.
+
 ## Capabilities
 
 ### New Capabilities

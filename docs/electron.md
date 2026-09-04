@@ -34,6 +34,9 @@ First launch creates `~/.resume-pro/.env` (`main.ts` / `electron-env.ts`):
 - `AI_API_*` placeholders
 - `APP_TARGET=electron`
 
+**Planned:** `WORKSPACE_PATH=~/.resume-pro/workspace` for document storage +
+isomorphic-git (retires DB document saves). See [workspace.md](./workspace.md).
+
 Users can change AI settings in-app (**System settings**); restart is required (`aiSettingsRestartRequired` in i18n).
 
 ## Production startup

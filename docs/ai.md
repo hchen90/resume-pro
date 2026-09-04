@@ -113,24 +113,29 @@ Validation and resume existence checks happen before the first chunk. Mid-stream
 
 ## Iteration plan (not yet implemented)
 
-Tracked as OpenSpec change
-[`plan-ai-change-artifacts-diff-git`](../openspec/changes/plan-ai-change-artifacts-diff-git/).
+Two related OpenSpec changes:
+
+| Change | Focus |
+|--------|--------|
+| [`workspace-git-storage`](../openspec/changes/workspace-git-storage/) | **Workspace folder** as document store (Markdown/JSON); **isomorphic-git** auto-commit; dirty/clean save UI; **retire DB** document saves. See [workspace.md](./workspace.md). |
+| [`plan-ai-change-artifacts-diff-git`](../openspec/changes/plan-ai-change-artifacts-diff-git/) | AI **生成产物**, before/after **diff** UX. Git history for applies uses the **workspace** repo (not a separate AI-only Git repo). |
+
 Current behavior vs planned product direction:
 
 | Topic | Current | Planned |
 |-------|---------|---------|
-| **生成产物** | AI Edit/Plan yields a transient `pending_proposal` on the chat session; not a first-class generated artifact with durable identity/history | Model AI changes as **generated artifacts** (`pending` / `applied` / `rejected` / `undone`) queryable after the pending proposal clears |
-| **修改前后对比** | Proposal review shows summary counts, message, and affected titles only (`ai-proposal-review.tsx`) | Before/after reference comparison for affected nodes/fields on confirm review and in applied history |
-| **更新文档 + Git 版本** | Confirm stores a one-shot undo snapshot in SQLite (`agent_state.undoSnapshot`); no Git history or commit hash in the UI | Persist AI update docs in **local document storage**; version with **Git** in a dedicated local repo (not the product source tree); **show commit hash** in the UI |
+| **Document storage** | SQLite/Postgres tables for resumes and JDs | Workspace folder (`resumes/`, `jds/`) with clear Markdown/JSON files; DB document saves retired after migration |
+| **Versioning** | One-shot `undoSnapshot` in session state; no Git | isomorphic-git commits on save / AI apply; UI shows clean vs can-save; commit hash available from workspace HEAD/history |
+| **生成产物** | Transient `pending_proposal` on chat session | First-class AI change artifacts (pending / applied / rejected / undone) |
+| **修改前后对比** | Proposal review shows summary counts only | Before/after comparison for affected nodes/fields |
 
-Phased delivery (see change `design.md` / `tasks.md`):
+Phased delivery:
 
-1. Document this plan (this section).
-2. Artifact model + dual-write alongside existing confirm/undo.
-3. Before/after diff UI (dry-run patches; no Git required).
-4. Local update documents + Git commits + hash display; Git failure must not fail confirm.
+1. Document plans (`docs/workspace.md`, this section).
+2. Workspace FS + isomorphic-git + dirty/clean UI; migrate off DB.
+3. AI artifacts + before/after diff on top of workspace files/commits.
 
-Until those tasks ship, confirm/reject/undo behavior above remains the source of truth.
+Until those tasks ship, confirm/reject/undo and DB persistence above remain the source of truth.
 
 ## Patch protocol
 

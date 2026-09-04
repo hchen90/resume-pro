@@ -43,6 +43,11 @@ flowchart LR
   AI --> Repo
 ```
 
+**Planned** (iteration — not shipped): replace DB-backed resume/JD document
+storage with a **workspace folder** + **isomorphic-git** (auto-commit, dirty/
+clean UI). See [workspace.md](./workspace.md) and OpenSpec
+`workspace-git-storage`.
+
 ## Major features
 
 1. **Resume CRUD** — Create from the home page; structured node editing; PATCH persistence.

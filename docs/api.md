@@ -44,10 +44,13 @@ Restore the resume to the snapshot saved just before the last confirmed AI apply
 - **404**: no undo snapshot
 - **409**: resume version conflict
 
-**Planned** (iteration — not shipped): durable AI change artifacts, before/after
-diff APIs, and Git commit-hash metadata. See
-[ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented) and OpenSpec
-`plan-ai-change-artifacts-diff-git`.
+**Planned** (iteration — not shipped):
+
+- Workspace folder + isomorphic-git document storage (retire DB saves for
+  resumes/JDs) — [workspace.md](./workspace.md), OpenSpec `workspace-git-storage`
+- AI change artifacts + before/after diff —
+  [ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented), OpenSpec
+  `plan-ai-change-artifacts-diff-git`
 
 ### `GET /api/ai/chat?resumeId=&locale=`
 

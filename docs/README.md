@@ -7,7 +7,8 @@ Module-level documentation for developers and AI agents working in this reposito
 | Document | Description |
 |----------|-------------|
 | [overview.md](./overview.md) | Project overview, tech stack, directory layout |
-| [database.md](./database.md) | SQLite / Postgres, schema, repositories |
+| [database.md](./database.md) | SQLite / Postgres, schema, repositories (**document storage retiring**) |
+| [workspace.md](./workspace.md) | **Planned:** workspace folder + isomorphic-git storage |
 | [resume.md](./resume.md) | Resume data model, validation, defaults, patches |
 | [templates.md](./templates.md) | Resume template registry and rendering |
 | [ai.md](./ai.md) | AI assistant: chat, edit, plan modes and patches |

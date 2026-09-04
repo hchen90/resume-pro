@@ -6,6 +6,12 @@
 - Create tables on startup (`ensureDatabase`)
 - Expose repository layer for resumes and job descriptions
 
+> **Iteration — retiring document storage:** User resume and JD documents will
+> move to a workspace folder + isomorphic-git. After cutover, this module will
+> no longer be the durable store for those entities. See
+> [workspace.md](./workspace.md) and OpenSpec `workspace-git-storage`. Until
+> that ships, the tables and repositories below remain authoritative.
+
 ## Key files
 
 | Path | Description |
@@ -69,11 +75,12 @@ One row per resume (FK cascade on resume delete).
 | `agent_context` / `agent_state` | AgentScope / assistant extras; `agent_state.undoSnapshot` holds the pre-confirm resume for one-shot AI undo |
 | `updated_at` | ISO timestamp |
 
-**Planned** (iteration — not shipped): first-class AI change artifacts (生成产物),
-before/after snapshots for comparison, and local AI update documents versioned
-with Git (commit hash stored for UI). Details:
-[ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented), OpenSpec
-`plan-ai-change-artifacts-diff-git`.
+**Planned** (iteration — not shipped): first-class AI change artifacts (生成产物)
+and before/after comparison remain under OpenSpec
+`plan-ai-change-artifacts-diff-git`. **Git versioning / commit hashes** for
+document updates are owned by the workspace plan
+([workspace.md](./workspace.md), OpenSpec `workspace-git-storage`) rather than a
+separate AI-only Git repo.
 
 ## Provider differences
 

@@ -54,44 +54,40 @@ required before persist.
 
 ### 3. Local docs + Git versioning
 
-- **Decision**: Persist human-readable update records as local documents (e.g.
-  under app data dir / Electron `~/.resume-pro/` or a per-resume docs folder),
-  with metadata also in SQLite for query. On apply (and optionally reject),
-  create a Git commit in a dedicated local repo (or per-resume repo) and store
-  the commit SHA on the artifact. UI shows abbreviated hash (with full hash on
-  hover/copy).
-- **Why**: Matches “本地化文档数据存储 + Git 版本记录 + 界面显示提交哈希”.
-- **Alternatives**: DB-only versioning without Git — fails the Git/hash
-  requirement; using the product source repo — pollutes app development history.
+- **Decision (updated):** Do **not** create a separate AI-only Git repo. Persist
+  AI-related files under the **workspace** (`workspace-git-storage` /
+  `docs/workspace.md`) and use **isomorphic-git** workspace commits for
+  versioning and commit-hash UI. Artifacts may store the workspace commit SHA.
+- **Why**: User direction superseded dedicated AI Git with a unified workspace.
+- **Alternatives**: Dedicated AI-docs repo — superseded.
 
 ### 4. Iteration sequencing
 
-- **Decision**: Phase docs + OpenSpec first; then artifacts + diff UI; then Git
-  commit pipeline + hash display. Keep existing confirm/undo until Git-backed
+- **Decision**: Phase docs + OpenSpec first; workspace storage cutover
+  (`workspace-git-storage`) before or with Git hash display; then artifacts +
+  diff UI on workspace files. Keep existing confirm/undo until workspace
   history can replace one-shot undo (undo may remain as a convenience).
-- **Why**: Reduces risk; current confirm path stays trustworthy.
+- **Why**: Reduces risk; storage foundation must land first.
 
 ## Risks / Trade-offs
 
-- [Git availability on all platforms] → Detect `git` binary; degrade gracefully
-  (store docs without commit, show “Git unavailable”) rather than fail confirm.
+- [Workspace Git unavailable] → isomorphic-git is in-process; degrade only if
+  FS fails — see workspace change.
 - [Snapshot storage size] → Store compact JSON snapshots or content-addressed
-  blobs; prune older than N versions per resume.
-- [Electron vs web paths] → Centralize docs/Git root resolution in one module
-  (mirror settings/AI env pattern).
-- [Confusion with product repo Git] → Document clearly that AI change Git is a
-  separate local data repository.
+  blobs under the resume folder; prune older than N versions per resume.
+- [Electron vs web paths] → Use shared `WORKSPACE_PATH` resolution.
+- [Confusion with product repo Git] → Workspace `.git` is under the data
+  workspace, never the application source tree.
 
 ## Migration Plan
 
-1. Document iteration plan in `docs/ai.md` (and cross-links).
-2. Add artifact persistence alongside existing pending proposal (dual-write).
-3. Ship diff UI using dry-run apply without requiring Git.
-4. Add Git commit + hash display; backfill hashes only for new applies.
+1. Document plans (`docs/ai.md`, `docs/workspace.md`).
+2. Land workspace FS + isomorphic-git (`workspace-git-storage`).
+3. Artifact persistence + before/after diff on workspace files.
+4. Surface workspace commit hashes on AI apply history.
 5. Optionally retire or narrow one-shot undo once history restore exists.
 
 ## Open Questions
 
-- Single shared AI-changes Git repo vs one repo per resume.
-- Whether rejected proposals create commits or only applied ones.
-- Exact document format (Markdown vs JSON + Markdown summary).
+- Whether rejected proposals create workspace commits or only applied ones.
+- Exact on-disk layout for AI artifact sidecar files under `resumes/<id>/ai/`.
