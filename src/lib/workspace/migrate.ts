@@ -216,6 +216,7 @@ function dbSessionToStored(row: DbAiSession) {
     sessionVersion: row.sessionVersion ?? 0,
     lastRunId: row.lastRunId,
     undoSnapshot: (agentState?.undoSnapshot ?? null) as ResumeSaveInput | null,
+    redoSnapshot: null,
     updatedAt: row.updatedAt,
   };
 }

@@ -34,6 +34,7 @@ import type { ResumeWithNodes } from "@/lib/resume/types";
 
 import { AiLoadingIndicator } from "./ai-loading-indicator";
 import { AiProposalReview } from "./ai-proposal-review";
+import { AiChangeHistory } from "./ai-change-history";
 
 const assistantMarkdownComponents: Components = {
   p: ({ children }) => <p className="my-1 first:mt-0 last:mb-0">{children}</p>,
@@ -163,6 +164,8 @@ export function AiPanel({
   const [pendingProposal, setPendingProposal] =
     useState<PendingPatchProposal | null>(null);
   const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [streamState, setStreamState] = useState<AssistantUiState>(
     createInitialAssistantUiState(),
   );
@@ -225,6 +228,7 @@ export function AiPanel({
         setChatSummary(session.summary);
         setSessionVersion(session.sessionVersion);
         setCanUndo(session.canUndo);
+        setCanRedo(session.canRedo);
       })
       .catch(() => {
         if (cancelled || sessionVersionRef.current !== version) {
@@ -240,6 +244,7 @@ export function AiPanel({
         setChatSummary(fallback.summary);
         setSessionVersion(fallback.sessionVersion);
         setCanUndo(fallback.canUndo);
+        setCanRedo(fallback.canRedo);
       })
       .finally(() => {
         if (!cancelled && sessionVersionRef.current === version) {
@@ -278,6 +283,8 @@ export function AiPanel({
           setSessionVersion(session.sessionVersion);
           setChatSummary(session.summary);
           setPendingProposal(session.pendingProposal);
+          setCanUndo(session.canUndo);
+          setCanRedo(session.canRedo);
         })
         .catch(() => {
           /* keep local UI state */
@@ -455,6 +462,7 @@ export function AiPanel({
           setSessionVersion(session.sessionVersion);
           setMode(session.mode);
           setCanUndo(session.canUndo);
+          setCanRedo(session.canRedo);
         } else if (assistantMessage) {
           setMessages((current) => [...current, assistantMessage]);
           if (nextState.pendingPlan) {
@@ -595,6 +603,7 @@ export function AiPanel({
           sessionVersion: number;
           mode: AiMode;
           canUndo?: boolean;
+          canRedo?: boolean;
         };
       };
 
@@ -611,6 +620,7 @@ export function AiPanel({
         setSessionVersion(payload.session.sessionVersion);
         setMode(payload.session.mode);
         setCanUndo(Boolean(payload.session.canUndo));
+        setCanRedo(Boolean(payload.session.canRedo));
       } else {
         setPendingProposal(null);
       }
@@ -618,6 +628,7 @@ export function AiPanel({
       if (payload.resume) {
         onResumeUpdated(payload.resume);
       }
+      setHistoryRefreshKey((value) => value + 1);
     } catch (error) {
       setMessages((current) => [
         ...current,
@@ -667,6 +678,7 @@ export function AiPanel({
           sessionVersion: number;
           mode: AiMode;
           canUndo?: boolean;
+          canRedo?: boolean;
         };
       };
 
@@ -683,6 +695,7 @@ export function AiPanel({
         setSessionVersion(payload.session.sessionVersion);
         setMode(payload.session.mode);
         setCanUndo(Boolean(payload.session.canUndo));
+        setCanRedo(Boolean(payload.session.canRedo));
       } else {
         setCanUndo(false);
       }
@@ -690,6 +703,82 @@ export function AiPanel({
       if (payload.resume) {
         onResumeUpdated(payload.resume);
       }
+      setHistoryRefreshKey((value) => value + 1);
+    } catch (error) {
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: formatRequestError(error),
+          isError: true,
+        },
+      ]);
+    } finally {
+      finishAiRequest();
+      setIsLoading(false);
+    }
+  }
+
+  async function redoLastAiUndo() {
+    if (!canRedo || isLoading) {
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadingPhase("edit");
+    const controller = beginAiRequest("edit");
+
+    try {
+      const response = await fetch("/api/ai/redo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          resumeId: resume.id,
+          locale,
+          expectedUpdatedAt: resume.updatedAt,
+        }),
+      });
+
+      const payload = (await response.json()) as {
+        message?: string;
+        error?: boolean;
+        resume?: ResumeWithNodes;
+        session?: {
+          messages: AiMessage[];
+          pendingPlan: AiPendingPlan | null;
+          selectedPlanStepIds: string[];
+          pendingProposal: PendingPatchProposal | null;
+          summary: string | null;
+          sessionVersion: number;
+          mode: AiMode;
+          canUndo?: boolean;
+          canRedo?: boolean;
+        };
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.message ?? t.aiError);
+      }
+
+      if (payload.session) {
+        setMessages(payload.session.messages);
+        setPendingPlan(payload.session.pendingPlan);
+        setSelectedPlanStepIds(payload.session.selectedPlanStepIds);
+        setPendingProposal(payload.session.pendingProposal);
+        setChatSummary(payload.session.summary);
+        setSessionVersion(payload.session.sessionVersion);
+        setMode(payload.session.mode);
+        setCanUndo(Boolean(payload.session.canUndo));
+        setCanRedo(Boolean(payload.session.canRedo));
+      } else {
+        setCanRedo(false);
+      }
+
+      if (payload.resume) {
+        onResumeUpdated(payload.resume);
+      }
+      setHistoryRefreshKey((value) => value + 1);
     } catch (error) {
       setMessages((current) => [
         ...current,
@@ -790,7 +879,7 @@ export function AiPanel({
         </div>
       </div>
 
-      <div className="mt-4 flex-1 space-y-3 overflow-y-auto rounded-lg border border-[var(--app-border)] bg-[var(--app-muted-surface)] p-3">
+      <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto rounded-lg border border-[var(--app-border)] bg-[var(--app-muted-surface)] p-3">
         {chatSummary ? (
           <div className="flex justify-center py-1">
             <div className="max-w-full rounded-lg bg-[var(--app-surface)] px-3 py-2 text-xs leading-5 text-[var(--app-muted)] ring-1 ring-[var(--app-border)]">
@@ -846,9 +935,11 @@ export function AiPanel({
         <div ref={messagesEndRef} />
       </div>
 
+      <div className="mt-3 shrink-0 space-y-3">
       {pendingProposal ? (
         <AiProposalReview
           proposal={pendingProposal}
+          resume={resume}
           labels={t}
           isLoading={isLoading}
           onConfirm={() => void decideProposal("confirm")}
@@ -857,20 +948,39 @@ export function AiPanel({
       ) : null}
 
       {!pendingProposal && canUndo ? (
-        <div className="mt-4">
+        <div>
           <button
             type="button"
             onClick={() => void undoLastAiApply()}
             disabled={isLoading}
-            className="w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs font-semibold text-[var(--app-muted)] transition hover:bg-[var(--app-muted-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-xs font-semibold text-[var(--app-text)] transition hover:bg-[var(--app-muted-surface)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t.aiUndoLastApply}
           </button>
         </div>
       ) : null}
 
+      {!pendingProposal && canRedo ? (
+        <div>
+          <button
+            type="button"
+            onClick={() => void redoLastAiUndo()}
+            disabled={isLoading}
+            className="w-full rounded-md border border-[var(--app-accent-border)] bg-[var(--app-accent-soft)] px-3 py-2 text-xs font-semibold text-[var(--app-accent)] transition hover:bg-[var(--app-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t.aiRedoLastUndo}
+          </button>
+        </div>
+      ) : null}
+
+      <AiChangeHistory
+        resumeId={resume.id}
+        labels={t}
+        refreshKey={historyRefreshKey}
+      />
+
       {pendingPlan && !pendingProposal ? (
-        <div className="mt-4 rounded-lg border border-[var(--app-accent-border)] bg-[var(--app-accent-soft)] p-3">
+        <div className="rounded-lg border border-[var(--app-accent-border)] bg-[var(--app-accent-soft)] p-3">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--app-accent)]">
             {t.aiPlanReview}
           </p>
@@ -927,7 +1037,7 @@ export function AiPanel({
 
       <form
         onSubmit={handleSubmit}
-        className="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-2 focus-within:border-[var(--app-accent)]"
+        className="rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] p-2 focus-within:border-[var(--app-accent)]"
       >
         <textarea
           value={input}
@@ -1000,6 +1110,7 @@ export function AiPanel({
           </button>
         </div>
       </form>
+      </div>
     </aside>
   );
 }

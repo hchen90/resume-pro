@@ -90,6 +90,17 @@ export async function stageAllChanges(root = getWorkspaceRoot()) {
   }
 }
 
+/** True when any path (including `ai/`) differs from HEAD. */
+export async function hasWorkspaceWorktreeChanges(
+  root = getWorkspaceRoot(),
+): Promise<boolean> {
+  await ensureGitDir(root);
+  const matrix = await git.statusMatrix({ fs, dir: root });
+  return matrix.some(([, head, workdir, stage]) =>
+    isDirtyEntry(head, workdir, stage),
+  );
+}
+
 export async function commitWorkspace(
   message: string,
   root = getWorkspaceRoot(),
@@ -97,9 +108,17 @@ export async function commitWorkspace(
   await ensureGitDir(root);
   await stageAllChanges(root);
 
-  const before = await getWorkspaceGitStatus(root);
-  if (before.clean && before.headSha) {
-    return before.headSha;
+  let headSha: string | null = null;
+  try {
+    headSha = await git.resolveRef({ fs, dir: root, ref: "HEAD" });
+  } catch {
+    headSha = null;
+  }
+
+  // UI dirty status ignores `ai/`, but commits must still pick up AI artifacts /
+  // session writes when they are the only pending changes.
+  if (!(await hasWorkspaceWorktreeChanges(root)) && headSha) {
+    return headSha;
   }
 
   try {
@@ -114,12 +133,14 @@ export async function commitWorkspace(
       error instanceof Error &&
       /No changes|nothing to commit|empty/i.test(error.message)
     ) {
-      return before.headSha;
+      return headSha;
     }
-    // isomorphic-git may throw differently when tree unchanged
-    const after = await getWorkspaceGitStatus(root);
-    if (after.clean) {
-      return after.headSha;
+    if (!(await hasWorkspaceWorktreeChanges(root))) {
+      try {
+        return await git.resolveRef({ fs, dir: root, ref: "HEAD" });
+      } catch {
+        return headSha;
+      }
     }
     throw error;
   }

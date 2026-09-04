@@ -57,12 +57,13 @@ export async function GET(request: Request) {
 
   const stored = await getAiChatSession(resumeId, intro);
   const session = stored ?? normalizeAiChatSession(null, intro);
-  const { undoSnapshot, ...rest } = session;
+  const { undoSnapshot, redoSnapshot, ...rest } = session;
 
   return NextResponse.json({
     session: {
       ...rest,
       canUndo: undoSnapshot != null || session.canUndo,
+      canRedo: redoSnapshot != null || session.canRedo,
     },
   });
 }
@@ -96,6 +97,7 @@ export async function PUT(request: Request) {
         sessionVersion: existing?.sessionVersion ?? 0,
         lastRunId: existing?.lastRunId ?? null,
         undoSnapshot: existing?.undoSnapshot ?? null,
+        redoSnapshot: existing?.redoSnapshot ?? null,
       },
       intro,
     );
@@ -118,11 +120,12 @@ export async function PUT(request: Request) {
       expectedSessionVersion:
         input.expectedSessionVersion ?? existing?.sessionVersion,
     });
-    const { undoSnapshot, ...rest } = saved;
+    const { undoSnapshot, redoSnapshot, ...rest } = saved;
     return NextResponse.json({
       session: {
         ...rest,
         canUndo: undoSnapshot != null || saved.canUndo,
+        canRedo: redoSnapshot != null || saved.canRedo,
       },
     });
   } catch (error) {

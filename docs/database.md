@@ -75,7 +75,7 @@ One row per resume (FK cascade on resume delete).
 | `updated_at` | ISO timestamp |
 
 **Note:** Resume/JD/AI-session durability is the workspace (see
-[workspace.md](./workspace.md)). Tables below are **legacy** and only read by
+[workspace.md](./workspace.md)). AI change artifacts also live under `resumes/<id>/ai/` (see [ai.md](./ai.md#iteration-plan)). Tables below are **legacy** and only read by
 `npm run workspace:migrate`.
 
 ## Provider differences

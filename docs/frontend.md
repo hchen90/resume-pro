@@ -25,16 +25,17 @@ Query params `lang` and `ui`, plus cookies, control locale and theme (see [i18n-
 | `node-editor.tsx` | Per-node-type form fields. Multi-item start/end dates use native `type="month"` pickers. Year-only stored values (e.g. `2020` from AI) are coerced to `YYYY-01` for display so the control is not blank. |
 | `resume-preview.tsx` | Live template preview |
 | `template-select.tsx` | Switch `templateId` |
-| `ai-panel.tsx` | AI modes and plan confirmation UI |
-| `ai-proposal-review.tsx` | Pending proposal summary + confirm/reject (counts/titles only today) |
+| `ai-panel.tsx` | AI modes, plan confirmation, change history hook |
+| `ai-proposal-review.tsx` | Pending proposal summary + before/after comparison + confirm/reject |
+| `ai-change-history.tsx` | Applied/rejected/undone artifact list + stored before/after + commit hash |
 | `print-button.tsx` | Link to download page |
 
 Resume workspace save control shows **clean** vs **can save** from local edits
 plus `GET /api/workspace/status` (short commit hash). See
 [workspace.md](./workspace.md).
 
-**Still planned UI:** before/after AI comparison
-([ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented)).
+AI change artifacts and before/after UI:
+[ai.md — Iteration plan](./ai.md#iteration-plan).
 
 #### Form control constraints
 

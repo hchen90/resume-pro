@@ -17,13 +17,11 @@ import {
 } from "@/lib/db/resume-repository";
 import { dictionaries, locales, resolveLocale } from "@/lib/i18n";
 import { commitWorkspaceChanges } from "@/lib/workspace/ensure";
-import {
-  markLatestAppliedArtifactUndone,
-} from "@/lib/workspace/ai-artifact-store";
+import { markLatestUndoneArtifactApplied } from "@/lib/workspace/ai-artifact-store";
 
 export const runtime = "nodejs";
 
-const undoRequestSchema = z.object({
+const redoRequestSchema = z.object({
   resumeId: z.string().min(1),
   locale: z.enum(locales).optional(),
   expectedUpdatedAt: z.string().min(1).optional(),
@@ -49,7 +47,7 @@ export async function POST(request: Request) {
   let locale = resolveLocale(undefined);
 
   try {
-    const input = undoRequestSchema.parse(await request.json());
+    const input = redoRequestSchema.parse(await request.json());
     locale = resolveLocale(input.locale);
     const t = dictionaries[locale];
     const intro = t.aiIntro;
@@ -63,9 +61,9 @@ export async function POST(request: Request) {
       (await getAiChatSession(input.resumeId, intro)) ??
       createDefaultAiChatSession(intro);
 
-    if (!session.undoSnapshot) {
+    if (!session.redoSnapshot) {
       return NextResponse.json(
-        { message: t.aiUndoMissing, error: true },
+        { message: t.aiRedoMissing, error: true },
         { status: 404 },
       );
     }
@@ -76,7 +74,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         {
-          message: t.aiUndoConflict,
+          message: t.aiRedoConflict,
           error: true,
           code: "resume_conflict",
         },
@@ -84,18 +82,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const redoSnapshot = resumeToSaveInput(storedResume);
+    const undoSnapshot = resumeToSaveInput(storedResume);
 
     let updatedResume;
     try {
-      updatedResume = await saveResume(input.resumeId, session.undoSnapshot, {
+      updatedResume = await saveResume(input.resumeId, session.redoSnapshot, {
         expectedUpdatedAt: input.expectedUpdatedAt ?? storedResume.updatedAt,
       });
     } catch (error) {
       if (error instanceof ResumeVersionConflictError) {
         return NextResponse.json(
           {
-            message: t.aiUndoConflict,
+            message: t.aiRedoConflict,
             error: true,
             code: "resume_conflict",
           },
@@ -108,14 +106,15 @@ export async function POST(request: Request) {
     const nextSession = normalizeAiChatSession(
       {
         ...session,
-        undoSnapshot: null,
-        redoSnapshot,
+        redoSnapshot: null,
+        // Re-arm one-shot undo so the restored AI apply can be undone again.
+        undoSnapshot,
         pendingProposal: null,
         messages: [
           ...session.messages,
           {
             role: "assistant",
-            content: `${t.aiUndoApplied}\n\n${t.aiRedoHint}`,
+            content: `${t.aiRedoApplied}\n\n${t.aiUndoHint}`,
           },
         ],
       },
@@ -124,13 +123,13 @@ export async function POST(request: Request) {
     const saved = await saveAiChatSession(input.resumeId, nextSession, intro);
 
     try {
-      await markLatestAppliedArtifactUndone(input.resumeId);
+      await markLatestUndoneArtifactApplied(input.resumeId);
       await commitWorkspaceChanges({
-        hint: `Undo AI change for ${input.resumeId}`,
+        hint: `Redo AI change for ${input.resumeId}`,
         useAi: false,
       });
     } catch {
-      // Artifact dual-write must not block undo.
+      // Artifact dual-write must not block redo.
     }
 
     return NextResponse.json({

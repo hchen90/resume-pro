@@ -29,6 +29,35 @@ export function resumeDir(resumeId: string, root = getWorkspaceRoot()) {
   return path.join(resumesDir(root), resumeId);
 }
 
+/** AI chat + change artifacts live under each resume's `ai/` folder. */
+export function resumeAiDir(resumeId: string, root = getWorkspaceRoot()) {
+  return path.join(resumeDir(resumeId, root), "ai");
+}
+
+export function aiArtifactsDir(resumeId: string, root = getWorkspaceRoot()) {
+  return path.join(resumeAiDir(resumeId, root), "artifacts");
+}
+
+export function aiArtifactPath(
+  resumeId: string,
+  artifactId: string,
+  root = getWorkspaceRoot(),
+) {
+  return path.join(aiArtifactsDir(resumeId, root), `${artifactId}.json`);
+}
+
+export function aiChangeDocsDir(resumeId: string, root = getWorkspaceRoot()) {
+  return path.join(resumeAiDir(resumeId, root), "changes");
+}
+
+export function aiChangeDocPath(
+  resumeId: string,
+  artifactId: string,
+  root = getWorkspaceRoot(),
+) {
+  return path.join(aiChangeDocsDir(resumeId, root), `${artifactId}.md`);
+}
+
 export function jdDir(jdId: string, root = getWorkspaceRoot()) {
   return path.join(jdsDir(root), jdId);
 }

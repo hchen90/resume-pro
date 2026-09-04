@@ -29,6 +29,7 @@ type StoredAiSession = {
   sessionVersion: number;
   lastRunId: string | null;
   undoSnapshot: ResumeSaveInput | null;
+  redoSnapshot: ResumeSaveInput | null;
   updatedAt: string;
 };
 
@@ -57,6 +58,7 @@ export async function getAiSessionDocument(
       sessionVersion: stored.sessionVersion ?? 0,
       lastRunId: stored.lastRunId,
       undoSnapshot: stored.undoSnapshot,
+      redoSnapshot: stored.redoSnapshot ?? null,
     },
     introContent,
   );
@@ -98,6 +100,7 @@ export async function saveAiSessionDocument(
     sessionVersion: nextVersion,
     lastRunId: normalized.lastRunId,
     undoSnapshot: normalized.undoSnapshot,
+    redoSnapshot: normalized.redoSnapshot,
     updatedAt: new Date().toISOString(),
   };
 

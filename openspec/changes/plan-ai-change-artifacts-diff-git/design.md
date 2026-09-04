@@ -89,5 +89,6 @@ required before persist.
 
 ## Open Questions
 
-- Whether rejected proposals create workspace commits or only applied ones.
-- Exact on-disk layout for AI artifact sidecar files under `resumes/<id>/ai/`.
+- Whether rejected proposals create workspace commits or only applied ones
+  (current: applied only; reject updates artifact JSON under `ai/` without requiring a commit).
+- Prune policy for older artifact snapshots per resume.

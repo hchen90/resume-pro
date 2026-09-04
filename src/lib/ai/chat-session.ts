@@ -21,6 +21,10 @@ export type AiChatSession = {
   undoSnapshot: ResumeSaveInput | null;
   /** Client hint when undoSnapshot is stripped from API responses. */
   canUndo: boolean;
+  /** Pre-undo resume payload for one-shot redo after AI undo. */
+  redoSnapshot: ResumeSaveInput | null;
+  /** Client hint when redoSnapshot is stripped from API responses. */
+  canRedo: boolean;
 };
 
 export function createDefaultAiChatSession(introContent: string): AiChatSession {
@@ -35,6 +39,8 @@ export function createDefaultAiChatSession(introContent: string): AiChatSession 
     lastRunId: null,
     undoSnapshot: null,
     canUndo: false,
+    redoSnapshot: null,
+    canRedo: false,
   };
 }
 
@@ -196,6 +202,8 @@ export function normalizeAiChatSession(
 
   const undoSnapshot = normalizeUndoSnapshot(raw.undoSnapshot);
   const canUndo = undoSnapshot !== null || raw.canUndo === true;
+  const redoSnapshot = normalizeUndoSnapshot(raw.redoSnapshot);
+  const canRedo = redoSnapshot !== null || raw.canRedo === true;
 
   return {
     messages: messages.length > 0 ? messages : defaults.messages,
@@ -212,6 +220,8 @@ export function normalizeAiChatSession(
     lastRunId,
     undoSnapshot,
     canUndo,
+    redoSnapshot,
+    canRedo,
   };
 }
 

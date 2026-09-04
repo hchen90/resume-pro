@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
 import {
+  createPendingArtifactFromProposal,
+  transitionArtifactStatus,
+} from "@/lib/ai/change-artifact";
+import {
   createDefaultAiChatSession,
   normalizeAiChatSession,
   resumeToSaveInput,
@@ -19,16 +23,29 @@ import {
   saveResume,
 } from "@/lib/db/resume-repository";
 import { dictionaries, resolveLocale } from "@/lib/i18n";
+import { commitWorkspaceChanges, readWorkspaceStatus } from "@/lib/workspace/ensure";
+import {
+  getAiChangeArtifactByProposalId,
+  saveAiChangeArtifact,
+  setArtifactCommitHash,
+  writeAiChangeUpdateDocument,
+} from "@/lib/workspace/ai-artifact-store";
 
 export const runtime = "nodejs";
 
-function toClientSession<T extends { undoSnapshot: unknown; canUndo?: boolean }>(
-  session: T,
-) {
-  const { undoSnapshot, ...rest } = session;
+function toClientSession<
+  T extends {
+    undoSnapshot: unknown;
+    redoSnapshot?: unknown;
+    canUndo?: boolean;
+    canRedo?: boolean;
+  },
+>(session: T) {
+  const { undoSnapshot, redoSnapshot, ...rest } = session;
   return {
     ...rest,
     canUndo: undoSnapshot != null || session.canUndo === true,
+    canRedo: redoSnapshot != null || session.canRedo === true,
   };
 }
 
@@ -63,6 +80,20 @@ export async function POST(request: Request) {
     }
 
     if (input.decision === "reject") {
+      try {
+        const existing = await getAiChangeArtifactByProposalId(
+          input.resumeId,
+          proposal.proposalId,
+        );
+        if (existing && existing.status === "pending") {
+          await saveAiChangeArtifact(
+            transitionArtifactStatus(existing, "rejected"),
+          );
+        }
+      } catch {
+        // Artifact dual-write must not block reject.
+      }
+
       const nextSession = normalizeAiChatSession(
         {
           ...session,
@@ -124,6 +155,35 @@ export async function POST(request: Request) {
     }
 
     const saveInput = applyResumePatches(input.resumeSnapshot, validated.patches);
+    const beforeSnapshot = resumeToSaveInput(input.resumeSnapshot);
+
+    // Persist artifact + update doc before saveResume so workspace Git includes them.
+    let appliedArtifactId = proposal.proposalId;
+    try {
+      const existing =
+        (await getAiChangeArtifactByProposalId(
+          input.resumeId,
+          proposal.proposalId,
+        )) ??
+        createPendingArtifactFromProposal({
+          proposal,
+          beforeSnapshot,
+          afterSnapshot: saveInput,
+        });
+      const applied = transitionArtifactStatus(
+        {
+          ...existing,
+          beforeSnapshot: existing.beforeSnapshot ?? beforeSnapshot,
+        },
+        "applied",
+        { afterSnapshot: saveInput },
+      );
+      await saveAiChangeArtifact(applied);
+      await writeAiChangeUpdateDocument(applied);
+      appliedArtifactId = applied.id;
+    } catch {
+      // Artifact dual-write must not block confirm.
+    }
 
     let updatedResume;
     try {
@@ -150,7 +210,8 @@ export async function POST(request: Request) {
         pendingProposal: null,
         pendingPlan: null,
         selectedPlanStepIds: [],
-        undoSnapshot: resumeToSaveInput(input.resumeSnapshot),
+        undoSnapshot: beforeSnapshot,
+        redoSnapshot: null,
         messages: [
           ...session.messages,
           {
@@ -163,12 +224,35 @@ export async function POST(request: Request) {
     );
     const saved = await saveAiChatSession(input.resumeId, nextSession, intro);
 
+    let commitHash: string | null = null;
+    try {
+      const status = await readWorkspaceStatus();
+      commitHash = status.headSha;
+      if (commitHash) {
+        await setArtifactCommitHash({
+          resumeId: input.resumeId,
+          artifactId: appliedArtifactId,
+          commitHash,
+        });
+      }
+      // Session + artifact hash live under `ai/`; commit them so git status is
+      // clean after apply (UI dirty checks still ignore `ai/` for chat churn).
+      await commitWorkspaceChanges({
+        hint: `Record AI change ${appliedArtifactId}`,
+        useAi: false,
+      });
+    } catch {
+      // Confirm already succeeded; leftover ai/ dirt must not fail the request.
+    }
+
     return NextResponse.json({
       ok: true,
       decision: "confirm",
       resume: updatedResume,
       session: toClientSession(saved),
       patches: validated.patches,
+      artifactId: appliedArtifactId,
+      commitHash,
     });
   } catch (error) {
     const detail =

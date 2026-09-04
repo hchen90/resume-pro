@@ -464,10 +464,14 @@ export function ResumeWorkspace({
               disabled={isPending || isDeleting || !canSave}
               className="mt-6 w-full rounded-lg bg-[var(--app-primary)] px-4 py-3 font-semibold text-white transition hover:bg-[var(--app-primary-hover)] disabled:opacity-60"
             >
-              {isPending ? t.saving : canSave ? t.save : t.workspaceClean}
+              {isPending
+                ? t.saving
+                : canSave
+                  ? t.save
+                  : `✓ ${t.workspaceClean}`}
             </button>
             <p className="mt-2 text-center text-xs text-[var(--app-muted)]">
-              {canSave ? t.workspaceCanSave : t.workspaceClean}
+              {canSave ? t.workspaceCanSave : `✓ ${t.workspaceClean}`}
               {workspaceStatus.shortHash
                 ? ` · ${t.workspaceHashLabel(workspaceStatus.shortHash)}`
                 : null}

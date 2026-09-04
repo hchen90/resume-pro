@@ -18,6 +18,7 @@ Job Match continues to use LangChain `ChatOpenAI` separately.
 | `src/app/api/ai/route.ts` | Streaming `POST` entry point (NDJSON) |
 | `src/app/api/ai/confirm/route.ts` | Confirm/reject patch proposals |
 | `src/app/api/ai/undo/route.ts` | One-shot undo of the last confirmed AI apply |
+| `src/app/api/ai/redo/route.ts` | One-shot redo after an accidental undo |
 | `src/app/api/ai/chat/route.ts` | Session load / lightweight UI-state sync |
 | `src/components/resume/ai-panel.tsx` | Streaming assistant UI |
 
@@ -109,25 +110,26 @@ Validation and resume existence checks happen before the first chunk. Mid-stream
 3. Server re-validates patches, checks snapshot hash + DB optimistic lock, then transactionally saves.
 4. Conflicts return `409` without overwriting newer edits.
 5. On successful confirm, the pre-confirm resume is stored for one-shot undo; the assistant UI offers **Undo last AI change**.
-6. `POST /api/ai/undo` restores that snapshot (then clears undo). Conflicts return `409` if the resume changed again.
+6. `POST /api/ai/undo` restores that snapshot, stores the pre-undo resume for one-shot **redo**, and clears undo. Conflicts return `409` if the resume changed again.
+7. `POST /api/ai/redo` restores the pre-undo snapshot (then clears redo and re-arms undo). Conflicts return `409` if the resume changed again.
 
 AI chat sessions persist at `resumes/<resumeId>/ai/session.json` in the workspace
 (see [workspace.md](./workspace.md)). They are not written to the database.
 
-## Iteration plan (not yet implemented)
+## Iteration plan
 
 | Change | Focus | Status |
 |--------|--------|--------|
 | [`workspace-git-storage`](../openspec/changes/workspace-git-storage/) | Workspace folder + isomorphic-git; retire DB document saves | **Implemented** — see [workspace.md](./workspace.md) |
-| [`plan-ai-change-artifacts-diff-git`](../openspec/changes/plan-ai-change-artifacts-diff-git/) | AI **生成产物**, before/after **diff** UX (history uses workspace commits) | Planned |
+| [`plan-ai-change-artifacts-diff-git`](../openspec/changes/plan-ai-change-artifacts-diff-git/) | AI **artifacts**, before/after **diff** UX (history uses workspace commits) | **Implemented** — artifacts under `ai/artifacts/`, update docs under `ai/changes/`, review + history UI |
 
-| Topic | Current | Still planned |
+| Topic | Current | Notes |
 |-------|---------|---------------|
 | **Document storage / versioning** | Workspace files + isomorphic-git auto-commit; dirty/clean UI + short hash | — |
-| **生成产物** | Transient `pending_proposal` on chat session | First-class AI change artifacts |
-| **修改前后对比** | Proposal review shows summary counts only | Before/after comparison for affected nodes/fields |
+| **Artifacts** | First-class AI change artifacts (`pending` / `applied` / `rejected` / `undone`) dual-written with proposals | — |
+| **Before/after diff** | Proposal review + history detail show before/after for affected nodes/fields | — |
 
-Confirm/reject/undo still apply; confirm/undo persist resumes through the workspace save + commit path.
+Confirm/reject/undo still apply; confirm/undo persist resumes through the workspace save + commit path. Applied artifacts store the workspace commit SHA when available.
 
 ## Patch protocol
 

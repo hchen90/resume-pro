@@ -21,18 +21,18 @@ source repository), addressable by artifact and resume.
 ### Requirement: Git version recording
 
 The system SHALL record versions of those local AI update documents using Git
-commits in a dedicated local Git repository managed by the application.
+commits in the application **workspace** repository (isomorphic-git under
+`WORKSPACE_PATH`), not the product source repository.
 
 #### Scenario: Commit created for applied update
 
-- **WHEN** an applied AI update document is written successfully and Git is
-  available
-- **THEN** the system creates a Git commit for that update and associates the
-  commit hash with the artifact
+- **WHEN** an applied AI update document is written successfully and the
+  workspace Git commit succeeds
+- **THEN** the system associates the workspace commit hash with the artifact
 
 #### Scenario: Git unavailable
 
-- **WHEN** Git is not available or the commit fails
+- **WHEN** workspace Git is not available or the commit fails
 - **THEN** the system MUST still persist the local document and artifact
   metadata, and MUST NOT fail the resume confirm solely because Git failed
 

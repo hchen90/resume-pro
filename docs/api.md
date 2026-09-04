@@ -32,23 +32,40 @@ Streaming resume assistant powered by AgentScope. See [ai.md](./ai.md).
 Confirm or reject a pending patch proposal.
 
 - **Body**: `resumeId`, `proposalId`, `decision` (`confirm` \| `reject`), `resumeSnapshot`, optional `locale`
-- **Response**: `{ ok, decision, resume?, session? }` (`session.canUndo` is true after a successful confirm)
+- **Response**: `{ ok, decision, resume?, session?, artifactId?, commitHash? }` (`session.canUndo` is true after a successful confirm)
 - **409**: snapshot or resume version conflict
+- Dual-writes AI change artifacts under the workspace (`ai/artifacts/`); on confirm also writes `ai/changes/<id>.md` and associates the workspace commit hash when available
 
 ### `POST /api/ai/undo`
 
 Restore the resume to the snapshot saved just before the last confirmed AI apply (one-shot).
 
 - **Body**: `resumeId`, optional `locale`, optional `expectedUpdatedAt`
-- **Response**: `{ ok, resume, session }`
+- **Response**: `{ ok, resume, session }` (`session.canRedo` is true after a successful undo)
 - **404**: no undo snapshot
 - **409**: resume version conflict
+- Marks the latest applied AI change artifact as `undone` when present
+
+### `POST /api/ai/redo`
+
+Restore the resume to the snapshot saved just before the last undo (one-shot), for accidental undos.
+
+- **Body**: `resumeId`, optional `locale`, optional `expectedUpdatedAt`
+- **Response**: `{ ok, resume, session }` (`session.canUndo` is true again after a successful redo)
+- **404**: no redo snapshot
+- **409**: resume version conflict
+
+### `GET /api/ai/artifacts?resumeId=&artifactId=`
+
+List AI change artifacts for a resume, or fetch one artifact with before/after diffs.
+
+- **List response**: `{ artifacts: [{ id, status, message, shortCommitHash, … }] }`
+- **Detail** (`artifactId` set): `{ artifact, diffs }`
 
 **Workspace status:** `GET /api/workspace/status` returns `{ clean, headSha,
 shortHash, dirtyFileCount }`. See [workspace.md](./workspace.md).
 
-**Still planned:** AI change artifacts + before/after diff —
-[ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented).
+See also [ai.md](./ai.md) for the assistant protocol and change-artifact model.
 
 ### `GET /api/ai/chat?resumeId=&locale=`
 

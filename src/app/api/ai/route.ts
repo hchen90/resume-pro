@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { createAssistantEventStream } from "@/lib/ai/agentscope/runner";
 import { resolveAssistantHistoryConfig } from "@/lib/ai/assistant-history-config";
+import { createPendingArtifactFromProposal } from "@/lib/ai/change-artifact";
+import { dryRunResumePatches } from "@/lib/ai/change-diff";
 import {
   createDefaultAiChatSession,
   normalizeAiChatSession,
@@ -18,6 +20,10 @@ import {
 } from "@/lib/db/ai-chat-repository";
 import { getResume } from "@/lib/db/resume-repository";
 import { dictionaries, resolveLocale } from "@/lib/i18n";
+import {
+  saveAiChangeArtifact,
+  supersedePendingArtifacts,
+} from "@/lib/workspace/ai-artifact-store";
 
 export const runtime = "nodejs";
 
@@ -178,6 +184,28 @@ export async function POST(request: Request) {
           });
         } catch {
           await saveAiChatSession(input.resumeId, nextSession, intro);
+        }
+
+        if (result.proposal && !result.errorMessage) {
+          try {
+            await supersedePendingArtifacts(
+              input.resumeId,
+              result.proposal.proposalId,
+            );
+            const { before, after } = dryRunResumePatches(
+              input.resumeSnapshot,
+              result.proposal.patches,
+            );
+            await saveAiChangeArtifact(
+              createPendingArtifactFromProposal({
+                proposal: result.proposal,
+                beforeSnapshot: before,
+                afterSnapshot: after,
+              }),
+            );
+          } catch {
+            // Artifact dual-write must not fail the assistant run.
+          }
         }
       },
     );

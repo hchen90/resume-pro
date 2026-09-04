@@ -86,6 +86,8 @@ describe("normalizeAiChatSession", () => {
     expect(session.selectedPlanStepIds).toEqual(["step-1"]);
     expect(session.undoSnapshot).toBeNull();
     expect(session.canUndo).toBe(false);
+    expect(session.redoSnapshot).toBeNull();
+    expect(session.canRedo).toBe(false);
   });
 
   it("keeps canUndo when the API strips undoSnapshot", () => {
@@ -98,6 +100,18 @@ describe("normalizeAiChatSession", () => {
     );
     expect(session.undoSnapshot).toBeNull();
     expect(session.canUndo).toBe(true);
+  });
+
+  it("keeps canRedo when the API strips redoSnapshot", () => {
+    const session = normalizeAiChatSession(
+      {
+        messages: [{ role: "assistant", content: intro }],
+        canRedo: true,
+      },
+      intro,
+    );
+    expect(session.redoSnapshot).toBeNull();
+    expect(session.canRedo).toBe(true);
   });
 
   it("drops an invalid pending plan and resets selected steps", () => {
