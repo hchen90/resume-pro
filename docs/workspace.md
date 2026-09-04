@@ -1,17 +1,10 @@
-# Workspace (iteration plan)
+# Workspace
 
-**Status:** Planned — OpenSpec change
+Local source of truth for resume and job-description documents. Versioned with
+**isomorphic-git** inside the folder. OpenSpec change:
 [`workspace-git-storage`](../openspec/changes/workspace-git-storage/).
-Not implemented yet. Until cutover, resumes and JDs still persist via
-[database.md](./database.md).
 
-## Goal
-
-Make a **workspace folder** the single source of truth for user documents
-(resumes, job descriptions), versioned with **isomorphic-git**. Abolish
-database-backed saves for those documents after migration.
-
-## Planned layout
+## Layout
 
 ```text
 workspace/                    # WORKSPACE_PATH (default ./data/workspace;
@@ -20,44 +13,53 @@ workspace/                    # WORKSPACE_PATH (default ./data/workspace;
   resumes/
     <resume-id>/
       resume.json             # canonical structured resume
-      resume.md               # optional Markdown projection
+      resume.md               # Markdown projection
       meta.json               # title, timestamps, templateId
-      ai/                     # optional: session / artifacts (follow-up)
+      ai/
+        session.json          # AI chat session (not counted in dirty UI)
   jds/
     <jd-id>/
       jd.md                   # primary JD content (Markdown)
       meta.json
   .git/                       # isomorphic-git repository
+  .resume-pro-migrated        # one-shot DB → workspace migration marker
 ```
 
-Documents may be **Markdown**, **JSON**, or both; resumes use JSON as
-canonical form for node fidelity; JDs use Markdown as canonical prose.
-
-## Git and save UX
+## Behavior
 
 | Action | Behavior |
 |--------|----------|
-| First use | Create layout + `isomorphic-git` `init` |
-| Save / AI confirm apply | Write files → stage → **auto-commit** |
-| Commit message | AI summary of workspace **git diff** when AI configured; else deterministic fallback |
-| UI clean | No uncommitted changes → mark workspace **clean** |
-| UI dirty | Uncommitted changes → mark **can save**; enable primary save |
+| First use | Create layout, `git init`, migrate DB documents + AI sessions once, initial commit |
+| Save / AI confirm apply | Write resume/JD files → stage → **auto-commit** |
+| AI chat session | Write `ai/session.json` immediately (no per-message commit); ignored for dirty/clean UI |
+| CLI migrate | `npm run workspace:migrate` (`--force` to re-export from DB) |
+| UI | Dirty edits or unclean Git (excluding `ai/`) → **can save**; after commit → **clean** + short hash |
 
-System `git` binary is **not** required for core save/commit.
+| Status API | `GET /api/workspace/status` → `{ clean, headSha, shortHash, dirtyFileCount }` (`ai/` excluded from dirty) |
 
-## Database retirement
+Resume/JD/**AI session** repositories under `src/lib/db/*-repository.ts` now
+delegate to `src/lib/workspace/*` and no longer write those rows to
+SQLite/Postgres. `DATABASE_PROVIDER` is only required when running
+`npm run workspace:migrate` against a legacy database.
 
-**BREAKING:** After migration, `resumes` / `resume_nodes` / `job_descriptions`
-are no longer written for document durability. A one-shot export from existing
-SQLite/Postgres into the workspace (+ initial commit) is part of the change.
+## Key files
 
-## Relation to AI iteration plan
+| Path | Role |
+|------|------|
+| `src/lib/workspace/paths.ts` | `WORKSPACE_PATH` resolution |
+| `src/lib/workspace/layout.ts` | Folder bootstrap |
+| `src/lib/workspace/resume-store.ts` / `jd-store.ts` | Document I/O |
+| `src/lib/workspace/ai-session-store.ts` | AI chat session I/O |
+| `src/lib/workspace/git.ts` | isomorphic-git init/status/commit |
+| `src/lib/workspace/commit-message.ts` | AI / fallback messages |
+| `src/lib/workspace/migrate.ts` | DB → workspace export |
+| `scripts/migrate-db-to-workspace.ts` | One-click CLI (`npm run workspace:migrate`) |
+| `src/lib/workspace/ensure.ts` | Ensure + commit helpers |
+| `src/app/api/workspace/status/route.ts` | Dirty/clean API |
 
-[`plan-ai-change-artifacts-diff-git`](../openspec/changes/plan-ai-change-artifacts-diff-git/)
-still covers AI **生成产物** and before/after **diff** UX. Git versioning and
-commit-hash display for AI applies are **folded into this workspace Git
-history** (not a separate AI-only repo). See [ai.md](./ai.md#iteration-plan-not-yet-implemented).
+## Related
 
-## Specs / tasks
-
-See the OpenSpec change `proposal.md`, `design.md`, `specs/*`, and `tasks.md`.
+- AI artifacts / before-after diff: still planned under
+  [`plan-ai-change-artifacts-diff-git`](../openspec/changes/plan-ai-change-artifacts-diff-git/)
+  (Git history is this workspace).
+- Legacy schema notes: [database.md](./database.md)

@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { type DragEvent, useMemo, useState, useTransition } from "react";
+import {
+  type DragEvent,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 
 import { resumeTemplates } from "@/templates/resume/registry";
 import { dictionaries, type Locale } from "@/lib/i18n";
@@ -34,6 +40,20 @@ const addableTypes: AddableNodeType[] = [
   "custom",
 ];
 
+type WorkspaceStatus = {
+  clean: boolean;
+  shortHash: string | null;
+};
+
+function resumeFingerprint(value: ResumeWithNodes) {
+  return JSON.stringify({
+    title: value.title,
+    templateId: value.templateId,
+    fontPreset: value.fontPreset,
+    nodes: value.nodes,
+  });
+}
+
 export function ResumeWorkspace({
   initialResume,
   locale,
@@ -45,6 +65,13 @@ export function ResumeWorkspace({
 }) {
   const t = dictionaries[locale];
   const [resume, setResume] = useState(initialResume);
+  const [savedFingerprint, setSavedFingerprint] = useState(() =>
+    resumeFingerprint(initialResume),
+  );
+  const [workspaceStatus, setWorkspaceStatus] = useState<WorkspaceStatus>({
+    clean: true,
+    shortHash: null,
+  });
   const [selectedNodeId, setSelectedNodeId] = useState(
     initialResume.nodes[0]?.id ?? "",
   );
@@ -62,6 +89,44 @@ export function ResumeWorkspace({
     () => resume.nodes.slice().sort((a, b) => a.sortOrder - b.sortOrder),
     [resume.nodes],
   );
+  const isDirty = resumeFingerprint(resume) !== savedFingerprint;
+  const canSave = isDirty || !workspaceStatus.clean;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function refreshWorkspaceStatus() {
+      try {
+        const response = await fetch("/api/workspace/status");
+        if (!response.ok) {
+          return;
+        }
+        const payload = (await response.json()) as {
+          clean: boolean;
+          shortHash: string | null;
+        };
+        if (!cancelled) {
+          setWorkspaceStatus({
+            clean: payload.clean,
+            shortHash: payload.shortHash,
+          });
+        }
+      } catch {
+        // ignore status fetch errors
+      }
+    }
+
+    void refreshWorkspaceStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function applySavedResume(saved: ResumeWithNodes) {
+    setResume(saved);
+    setSavedFingerprint(resumeFingerprint(saved));
+    setSaveState("saved");
+  }
 
   function updateNode(updatedNode: ResumeNode) {
     setResume((current) => ({
@@ -161,8 +226,22 @@ export function ResumeWorkspace({
         }
 
         const saved = (await response.json()) as ResumeWithNodes;
-        setResume(saved);
-        setSaveState("saved");
+        applySavedResume(saved);
+        try {
+          const statusResponse = await fetch("/api/workspace/status");
+          if (statusResponse.ok) {
+            const payload = (await statusResponse.json()) as {
+              clean: boolean;
+              shortHash: string | null;
+            };
+            setWorkspaceStatus({
+              clean: payload.clean,
+              shortHash: payload.shortHash,
+            });
+          }
+        } catch {
+          // ignore
+        }
       } catch {
         setSaveState("error");
       }
@@ -382,11 +461,17 @@ export function ResumeWorkspace({
             <button
               type="button"
               onClick={saveResume}
-              disabled={isPending || isDeleting}
+              disabled={isPending || isDeleting || !canSave}
               className="mt-6 w-full rounded-lg bg-[var(--app-primary)] px-4 py-3 font-semibold text-white transition hover:bg-[var(--app-primary-hover)] disabled:opacity-60"
             >
-              {isPending ? t.saving : t.save}
+              {isPending ? t.saving : canSave ? t.save : t.workspaceClean}
             </button>
+            <p className="mt-2 text-center text-xs text-[var(--app-muted)]">
+              {canSave ? t.workspaceCanSave : t.workspaceClean}
+              {workspaceStatus.shortHash
+                ? ` · ${t.workspaceHashLabel(workspaceStatus.shortHash)}`
+                : null}
+            </p>
             <Link
               href={`/resumes/${resume.id}/download?template=${encodeURIComponent(resume.templateId)}&font=${encodeURIComponent(resolveResumeFontPreset(resume.fontPreset))}&${settingsQuery({ lang: locale, style: uiStyle })}`}
               className="mt-3 block rounded-lg border border-[var(--app-border)] px-4 py-3 text-center font-semibold text-[var(--app-text)] hover:bg-[var(--app-muted-surface)]"
@@ -467,8 +552,18 @@ export function ResumeWorkspace({
         selectedNodeId={selectedNode?.id ?? ""}
         locale={locale}
         onResumeUpdated={(updatedResume) => {
-          setResume(updatedResume);
-          setSaveState("saved");
+          applySavedResume(updatedResume);
+          void fetch("/api/workspace/status")
+            .then((response) => (response.ok ? response.json() : null))
+            .then((payload: { clean: boolean; shortHash: string | null } | null) => {
+              if (payload) {
+                setWorkspaceStatus({
+                  clean: payload.clean,
+                  shortHash: payload.shortHash,
+                });
+              }
+            })
+            .catch(() => undefined);
         }}
       />
     </main>

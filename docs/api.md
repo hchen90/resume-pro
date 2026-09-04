@@ -44,13 +44,11 @@ Restore the resume to the snapshot saved just before the last confirmed AI apply
 - **404**: no undo snapshot
 - **409**: resume version conflict
 
-**Planned** (iteration — not shipped):
+**Workspace status:** `GET /api/workspace/status` returns `{ clean, headSha,
+shortHash, dirtyFileCount }`. See [workspace.md](./workspace.md).
 
-- Workspace folder + isomorphic-git document storage (retire DB saves for
-  resumes/JDs) — [workspace.md](./workspace.md), OpenSpec `workspace-git-storage`
-- AI change artifacts + before/after diff —
-  [ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented), OpenSpec
-  `plan-ai-change-artifacts-diff-git`
+**Still planned:** AI change artifacts + before/after diff —
+[ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented).
 
 ### `GET /api/ai/chat?resumeId=&locale=`
 
@@ -69,6 +67,15 @@ List AgentScope skills available to the resume assistant.
 - **Response**: `{ enabled, skills: [{ name, description, source }] }`
 - Filesystem paths and full skill instructions are not exposed to the browser.
 - The Settings page (`/settings`) consumes this endpoint (or equivalent server-side listing) to show skill names and descriptions.
+
+## Workspace
+
+### `GET /api/workspace/status`
+
+Git cleanliness for the document workspace.
+
+- **Response**: `{ clean, headSha, shortHash, dirtyFileCount }`
+- See [workspace.md](./workspace.md)
 
 ## Job fit
 

@@ -74,6 +74,7 @@ async function startProductionNextServer() {
     "release-notes.json",
   );
   process.env.SQLITE_PATH ??= path.join(getElectronConfigDir(), "resume-pro.sqlite");
+  process.env.WORKSPACE_PATH ??= path.join(getElectronConfigDir(), "workspace");
 
   log(`Loading Next.js standalone server from ${serverPath}`);
   const standaloneRequire = createRequire(serverPath);
@@ -123,6 +124,9 @@ function defaultElectronEnv(configDir: string) {
 # Database
 DATABASE_PROVIDER=sqlite
 SQLITE_PATH=${path.join(configDir, "resume-pro.sqlite")}
+
+# Workspace (resumes / JDs + isomorphic-git)
+WORKSPACE_PATH=${path.join(configDir, "workspace")}
 
 # To use Postgres instead:
 # DATABASE_PROVIDER=postgres

@@ -29,9 +29,12 @@ Query params `lang` and `ui`, plus cookies, control locale and theme (see [i18n-
 | `ai-proposal-review.tsx` | Pending proposal summary + confirm/reject (counts/titles only today) |
 | `print-button.tsx` | Link to download page |
 
-**Planned UI** (iteration — not shipped): workspace dirty/clean save status
-([workspace.md](./workspace.md)); before/after AI comparison and commit hash
-display ([ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented)).
+Resume workspace save control shows **clean** vs **can save** from local edits
+plus `GET /api/workspace/status` (short commit hash). See
+[workspace.md](./workspace.md).
+
+**Still planned UI:** before/after AI comparison
+([ai.md — Iteration plan](./ai.md#iteration-plan-not-yet-implemented)).
 
 #### Form control constraints
 

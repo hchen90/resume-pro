@@ -36,17 +36,16 @@ resume-pro/
 ```mermaid
 flowchart LR
   UI[Pages / components] --> Actions[Server Actions / API]
-  Actions --> Repo[Repositories]
-  Repo --> DB[(SQLite / Postgres)]
+  Actions --> WS[Workspace documents]
+  WS --> Git[(isomorphic-git)]
   UI --> AI["/api/ai"]
   AI --> LLM["OpenAI-compatible API"]
-  AI --> Repo
+  AI --> WS
 ```
 
-**Planned** (iteration — not shipped): replace DB-backed resume/JD document
-storage with a **workspace folder** + **isomorphic-git** (auto-commit, dirty/
-clean UI). See [workspace.md](./workspace.md) and OpenSpec
-`workspace-git-storage`.
+Resume and JD documents and AI chat sessions live under `WORKSPACE_PATH` (see
+[workspace.md](./workspace.md)). A legacy database is only needed to run
+`npm run workspace:migrate`.
 
 ## Major features
 
@@ -61,9 +60,10 @@ clean UI). See [workspace.md](./workspace.md) and OpenSpec
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_PROVIDER` | `sqlite` (default) or `postgres` |
-| `SQLITE_PATH` | SQLite file path; default `./data/resume-pro.sqlite` |
-| `DATABASE_URL` | Postgres connection string |
+| `DATABASE_PROVIDER` | Optional; only for `npm run workspace:migrate` from legacy DB |
+| `SQLITE_PATH` | Legacy SQLite path for migration |
+| `DATABASE_URL` | Legacy Postgres URL for migration |
+| `WORKSPACE_PATH` | Workspace root for resumes / JDs / AI sessions |
 | `AI_API_URL` / `AI_API_KEY` / `AI_API_MODEL` | OpenAI-compatible AI config |
 | `APP_TARGET` / `ELECTRON` | Marks Electron runtime |
 

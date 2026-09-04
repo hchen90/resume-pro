@@ -6,9 +6,9 @@ Resume Pro is an open-source, local-first AI resume editor for managing resumes,
 
 ## Highlights
 
-- Local-first by default, using SQLite out of the box with optional Postgres support.
-  (**Planned:** workspace folder + isomorphic-git replaces DB for resume/JD
-  documents — see [docs/workspace.md](./docs/workspace.md).)
+- Local-first by default: resumes and JDs live in a workspace folder versioned
+  with isomorphic-git (`WORKSPACE_PATH`; see [docs/workspace.md](./docs/workspace.md)).
+  Legacy SQLite/Postgres may still hold AI chat sessions.
 - Structured resume editing across personal information, summary, work experience, projects, education, skills, and other sections.
 - Seven built-in templates: Classic, Modern, Compact, Elegant, Timeline, Creative, and Academic.
 - Live preview, resume font selection, section reordering, and print/PDF export.
@@ -24,7 +24,8 @@ Resume Pro is an open-source, local-first AI resume editor for managing resumes,
 - TypeScript
 - Tailwind CSS
 - Drizzle ORM
-- SQLite / Postgres
+- Workspace folder + isomorphic-git (resumes / JDs)
+- SQLite / Postgres (legacy / AI session)
 - AgentScope for the resume assistant
 - LangChain for job fit analysis
 - OpenAI-compatible AI APIs
@@ -60,11 +61,30 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## AI And Database Configuration
 
-Resume Pro uses SQLite by default, with the local database stored at `./data/resume-pro.sqlite`. To use Postgres instead, configure `.env` with:
+Resumes, job descriptions, and AI chat sessions are stored under
+`WORKSPACE_PATH` (default `./data/workspace`) and versioned with isomorphic-git.
+See [docs/workspace.md](./docs/workspace.md).
 
 ```bash
-DATABASE_PROVIDER=postgres
-DATABASE_URL=postgres://user:password@localhost:5432/resume_pro
+WORKSPACE_PATH=./data/workspace
+```
+
+Migrate once from a legacy SQLite/Postgres database:
+
+```bash
+npm run workspace:migrate
+# or force re-export:
+npm run workspace:migrate -- --force
+```
+
+For that migration only, configure the old DB (optional afterward):
+
+```bash
+DATABASE_PROVIDER=sqlite
+SQLITE_PATH=./data/resume-pro.sqlite
+# or:
+# DATABASE_PROVIDER=postgres
+# DATABASE_URL=postgres://user:password@localhost:5432/resume_pro
 ```
 
 AI features use an OpenAI-compatible API:
@@ -79,7 +99,8 @@ Any provider that exposes an OpenAI-compatible base URL can be used. The same se
 
 If `AI_API_KEY` is not configured, core resume editing still works. The AI assistant and job fit analysis will prompt for AI configuration. Keep secrets out of version control.
 
-Database tables are created automatically during normal startup; `db:push` is only needed while developing schema changes.
+On first workspace use (or via `npm run workspace:migrate`), existing database
+resumes, JDs, and AI sessions are exported into the workspace.
 
 ## Electron Desktop App
 

@@ -2,15 +2,14 @@
 
 ## Responsibilities
 
-- Abstract SQLite and Postgres backends
-- Create tables on startup (`ensureDatabase`)
-- Expose repository layer for resumes and job descriptions
+- Optional legacy SQLite / Postgres access for **one-time migration** into the
+  workspace (`npm run workspace:migrate`)
+- Schema helpers remain for reading old tables during migrate
 
-> **Iteration — retiring document storage:** User resume and JD documents will
-> move to a workspace folder + isomorphic-git. After cutover, this module will
-> no longer be the durable store for those entities. See
-> [workspace.md](./workspace.md) and OpenSpec `workspace-git-storage`. Until
-> that ships, the tables and repositories below remain authoritative.
+> **Document + AI session storage retired:** Resumes, JDs, and AI chat sessions
+> live under the workspace ([workspace.md](./workspace.md)). Normal app use does
+> **not** require `DATABASE_PROVIDER`. Keep DB env vars only if you still need to
+> migrate from an existing `resume-pro.sqlite` / Postgres database.
 
 ## Key files
 
@@ -75,12 +74,9 @@ One row per resume (FK cascade on resume delete).
 | `agent_context` / `agent_state` | AgentScope / assistant extras; `agent_state.undoSnapshot` holds the pre-confirm resume for one-shot AI undo |
 | `updated_at` | ISO timestamp |
 
-**Planned** (iteration — not shipped): first-class AI change artifacts (生成产物)
-and before/after comparison remain under OpenSpec
-`plan-ai-change-artifacts-diff-git`. **Git versioning / commit hashes** for
-document updates are owned by the workspace plan
-([workspace.md](./workspace.md), OpenSpec `workspace-git-storage`) rather than a
-separate AI-only Git repo.
+**Note:** Resume/JD/AI-session durability is the workspace (see
+[workspace.md](./workspace.md)). Tables below are **legacy** and only read by
+`npm run workspace:migrate`.
 
 ## Provider differences
 

@@ -111,31 +111,23 @@ Validation and resume existence checks happen before the first chunk. Mid-stream
 5. On successful confirm, the pre-confirm resume is stored for one-shot undo; the assistant UI offers **Undo last AI change**.
 6. `POST /api/ai/undo` restores that snapshot (then clears undo). Conflicts return `409` if the resume changed again.
 
+AI chat sessions persist at `resumes/<resumeId>/ai/session.json` in the workspace
+(see [workspace.md](./workspace.md)). They are not written to the database.
+
 ## Iteration plan (not yet implemented)
 
-Two related OpenSpec changes:
+| Change | Focus | Status |
+|--------|--------|--------|
+| [`workspace-git-storage`](../openspec/changes/workspace-git-storage/) | Workspace folder + isomorphic-git; retire DB document saves | **Implemented** — see [workspace.md](./workspace.md) |
+| [`plan-ai-change-artifacts-diff-git`](../openspec/changes/plan-ai-change-artifacts-diff-git/) | AI **生成产物**, before/after **diff** UX (history uses workspace commits) | Planned |
 
-| Change | Focus |
-|--------|--------|
-| [`workspace-git-storage`](../openspec/changes/workspace-git-storage/) | **Workspace folder** as document store (Markdown/JSON); **isomorphic-git** auto-commit; dirty/clean save UI; **retire DB** document saves. See [workspace.md](./workspace.md). |
-| [`plan-ai-change-artifacts-diff-git`](../openspec/changes/plan-ai-change-artifacts-diff-git/) | AI **生成产物**, before/after **diff** UX. Git history for applies uses the **workspace** repo (not a separate AI-only Git repo). |
-
-Current behavior vs planned product direction:
-
-| Topic | Current | Planned |
-|-------|---------|---------|
-| **Document storage** | SQLite/Postgres tables for resumes and JDs | Workspace folder (`resumes/`, `jds/`) with clear Markdown/JSON files; DB document saves retired after migration |
-| **Versioning** | One-shot `undoSnapshot` in session state; no Git | isomorphic-git commits on save / AI apply; UI shows clean vs can-save; commit hash available from workspace HEAD/history |
-| **生成产物** | Transient `pending_proposal` on chat session | First-class AI change artifacts (pending / applied / rejected / undone) |
+| Topic | Current | Still planned |
+|-------|---------|---------------|
+| **Document storage / versioning** | Workspace files + isomorphic-git auto-commit; dirty/clean UI + short hash | — |
+| **生成产物** | Transient `pending_proposal` on chat session | First-class AI change artifacts |
 | **修改前后对比** | Proposal review shows summary counts only | Before/after comparison for affected nodes/fields |
 
-Phased delivery:
-
-1. Document plans (`docs/workspace.md`, this section).
-2. Workspace FS + isomorphic-git + dirty/clean UI; migrate off DB.
-3. AI artifacts + before/after diff on top of workspace files/commits.
-
-Until those tasks ship, confirm/reject/undo and DB persistence above remain the source of truth.
+Confirm/reject/undo still apply; confirm/undo persist resumes through the workspace save + commit path.
 
 ## Patch protocol
 

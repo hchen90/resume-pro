@@ -14,8 +14,8 @@ Module docs live under [`docs/`](./docs/):
 |----------|--------|
 | [docs/README.md](./docs/README.md) | Documentation index |
 | [docs/overview.md](./docs/overview.md) | Tech stack, layout, data flow |
-| [docs/database.md](./docs/database.md) | Database and repositories (**retiring for documents**) |
-| [docs/workspace.md](./docs/workspace.md) | Planned workspace folder + isomorphic-git storage |
+| [docs/database.md](./docs/database.md) | Database and repositories (legacy / AI sessions) |
+| [docs/workspace.md](./docs/workspace.md) | Workspace folder + isomorphic-git storage |
 | [docs/resume.md](./docs/resume.md) | Resume types, nodes, patches |
 | [docs/templates.md](./docs/templates.md) | Resume templates |
 | [docs/ai.md](./docs/ai.md) | AI modes and API |
@@ -41,8 +41,12 @@ drizzle/           # ORM migrations
 
 ## Conventions
 
-- **Database**: SQLite by default; `ensureDatabase()` runs on first repository call. Do not import `server-only` modules from the client. (**Planned:** resume/JD documents move to a workspace folder + isomorphic-git; see [docs/workspace.md](./docs/workspace.md).)
-- **Saving resumes**: `saveResume` replaces all nodes; PATCH must send the full `nodes` array. (**Planned:** save writes workspace files and auto-commits.)
+- **Database / workspace**: Resumes, JDs, and AI sessions persist under
+  `WORKSPACE_PATH` with isomorphic-git ([docs/workspace.md](./docs/workspace.md)).
+  `DATABASE_PROVIDER` is only needed for `npm run workspace:migrate` from a
+  legacy DB. Do not import `server-only` modules from the client.
+- **Saving resumes**: Save writes workspace files and auto-commits; PATCH must
+  send the full `nodes` array.
 - **AI**: Requires `AI_API_KEY`; when missing, APIs return a friendly message (not 500). The assistant uses AgentScope in Node.js routes (`src/lib/ai/agentscope/`) and streams NDJSON events. AgentScope skills live under `skills/resume-assistant/<name>/SKILL.md`; they provide guidance but cannot bypass mode or patch-confirmation rules. Edit/Plan produce confirmable proposals; patches still validate through `src/lib/ai/patch.ts` + `patch-validate.ts`. Job Match still uses LangChain.
 - **i18n**: New UI strings must be added to every locale in `dictionaries` in `src/lib/i18n.ts`.
 - **Form controls**: Preserve semantic/native input types; fix incompatible stored values through normalization or validation instead of downgrading controls to plain text. Canonical rule: `.agents/rules/resume-form-controls.md` (Claude Code: `.claude/rules/`; Cursor: `.cursor/rules/`).

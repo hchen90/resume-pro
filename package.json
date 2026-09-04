@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "workspace:migrate": "tsx --tsconfig scripts/tsconfig.migrate.json scripts/migrate-db-to-workspace.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "prepare": "git config core.hooksPath .githooks || true"
@@ -42,6 +43,7 @@
     "better-sqlite3": "^12.9.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
+    "isomorphic-git": "^1.41.9",
     "next": "16.2.6",
     "pg": "^8.20.0",
     "react": "19.2.4",
@@ -67,6 +69,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5",
     "vitest": "^3.2.4",
     "wait-on": "^9.0.10"
