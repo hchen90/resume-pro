@@ -71,7 +71,7 @@ One row per resume (FK cascade on resume delete).
 | `pending_proposal` | JSON patch proposal awaiting confirm |
 | `session_version` | Optimistic concurrency counter |
 | `last_run_id` | Last assistant run id |
-| `agent_context` / `agent_state` | AgentScope / assistant extras; `agent_state.undoSnapshot` holds the pre-confirm resume for one-shot AI undo |
+| `agent_context` / `agent_state` | Assistant extras; `agent_state.undoSnapshot` holds the pre-confirm resume for one-shot AI undo |
 | `updated_at` | ISO timestamp |
 
 **Note:** Resume/JD/AI-session durability is the workspace (see

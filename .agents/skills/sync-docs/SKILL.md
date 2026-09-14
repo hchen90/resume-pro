@@ -40,7 +40,7 @@ consistent when relevant.
 | DB schema, providers, repositories | `docs/database.md` |
 | Resume model, nodes, patches | `docs/resume.md` |
 | Templates (add/remove/rename) | `docs/templates.md` + template list in `README.md` |
-| AI modes, providers, AgentScope/LangChain, skills | `docs/ai.md` |
+| AI modes, providers, LangGraph/LangChain, skills | `docs/ai.md` |
 | Job fit tool | `docs/job-match.md` |
 | Pages, components, server actions | `docs/frontend.md` |
 | HTTP API routes | `docs/api.md` |

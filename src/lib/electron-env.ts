@@ -80,7 +80,7 @@ AI_API_MODEL=gpt-4o-mini
 AI_TEMPERATURE=0.3
 AI_SUMMARY_MODEL=
 
-# AgentScope skills
+# Assistant skills
 AI_SKILLS_ENABLED=true
 AI_SKILL_DIRS=
 AI_SKILLS=

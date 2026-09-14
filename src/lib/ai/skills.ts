@@ -156,9 +156,41 @@ export function listConfiguredAgentSkills(
           : "configured",
       });
     } catch {
-      // AgentScope also ignores unreadable skill files.
+      // Ignore unreadable skill files.
     }
   }
 
   return [...skills.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function formatSkillsCatalogPrompt(skills: AgentSkillInfo[]) {
+  if (skills.length === 0) {
+    return "";
+  }
+
+  const lines = skills.map(
+    (skill) => `- ${skill.name}: ${skill.description}`,
+  );
+
+  return [
+    "可用技能（按需调用 Skill 工具加载完整说明）：",
+    ...lines,
+  ].join("\n");
+}
+
+export function readSkillMarkdown(
+  skillName: string,
+  skills = listConfiguredAgentSkills(),
+) {
+  const skill = skills.find((entry) => entry.name === skillName);
+  if (!skill) {
+    return null;
+  }
+
+  const filePath = path.join(skill.path, "SKILL.md");
+  try {
+    return fs.readFileSync(filePath, "utf8");
+  } catch {
+    return null;
+  }
 }

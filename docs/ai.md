@@ -2,15 +2,20 @@
 
 ## Responsibilities
 
-Use AgentScope (`@agentscope-ai/agentscope@0.0.13`) on the Node.js server for resume chat, plan drafting, and structured edit proposals. Resume mutations still go through the local patch protocol and only persist after user confirmation.
+Use LangGraph (`@langchain/langgraph`) with LangChain `ChatOpenAI` on the Node.js
+server for resume chat, plan drafting, and structured edit proposals. Resume
+mutations still go through the local patch protocol and only persist after user
+confirmation.
 
-Job Match continues to use LangChain `ChatOpenAI` separately.
+Job Match, chat-history summarization, and related one-shot calls use the same
+LangChain `ChatOpenAI` client (`src/lib/ai/model.ts` + `invoke.ts`).
 
 ## Key files
 
 | Path | Description |
 |------|-------------|
-| `src/lib/ai/agentscope/` | AgentScope model/agent/toolkit adapter, event mapping, runner |
+| `src/lib/ai/langgraph/` | LangGraph StateGraph adapter, tools, event mapping, runner |
+| `src/lib/ai/skills.ts` | Skill discovery (`SKILL.md`) and catalog helpers |
 | `src/lib/ai/protocol.ts` | Stable NDJSON event contract for the browser |
 | `src/lib/ai/patch.ts` | Patch schemas and deterministic apply engine |
 | `src/lib/ai/patch-validate.ts` | Strict patch validation against template registry and node ids |
@@ -29,12 +34,12 @@ Environment variables (or Electron `~/.resume-pro/.env`):
 - `AI_API_URL` — OpenAI-compatible API base URL
 - `AI_API_KEY` — when missing, AI endpoints return a friendly “not configured” stream; core editing still works
 - `AI_API_MODEL` — default `gpt-4o-mini`
-- `AI_TEMPERATURE` — sampling temperature for AgentScope and LangChain clients (default `0.3`). Some models only allow `1`
+- `AI_TEMPERATURE` — sampling temperature for LangChain clients (default `0.3`). Some models only allow `1`
 - `AI_SUMMARY_MODEL` — optional; chat-history summarization model. Falls back to `AI_API_MODEL` when unset
 - `AI_HISTORY_MAX_MESSAGES` — max conversational messages stored per resume (default `50`)
 - `AI_HISTORY_SUMMARIZE_ABOVE` — summarize older turns when conversational count exceeds this (default `30`)
 - `AI_HISTORY_CONTEXT_MESSAGES` — recent turns kept after summarization and sent to the model (default `20`)
-- `AI_SKILLS_ENABLED` — enable AgentScope skills and the built-in `Skill` tool (default enabled)
+- `AI_SKILLS_ENABLED` — enable resume skills and the `Skill` tool (default enabled)
 - `AI_SKILL_DIRS` — optional comma-separated or JSON-array directories whose direct subdirectories contain `SKILL.md`
 - `AI_SKILLS` — optional comma-separated or JSON-array individual skill directories
 
@@ -42,15 +47,14 @@ On Electron, **System settings** + `PUT /api/settings/ai` can update the local `
 
 ## Runtime constraints
 
-- AgentScope runs only in Node.js route handlers (`export const runtime = "nodejs"`).
-- Do not import AgentScope Agent/Model/Toolkit into client components.
-- Pin `@agentscope-ai/agentscope` to an exact `0.0.x` version; isolate upstream API drift behind `src/lib/ai/agentscope/`.
-- Next.js marks the package as `serverExternalPackages` so it is required at runtime by Node instead of bundled by Turbopack. This is required because upstream’s `./event` export has a `development` condition pointing at `.ts` source, which Turbopack cannot load in `next dev`.
+- LangGraph runs only in Node.js route handlers (`export const runtime = "nodejs"`).
+- Do not import LangGraph / LangChain agent graph code into client components.
+- Isolate graph/stream wiring behind `src/lib/ai/langgraph/`; keep the NDJSON protocol and patch confirm flow framework-agnostic.
 
-## AgentScope skills
+## Assistant skills
 
 Bundled resume skills live under `skills/resume-assistant/` and are discovered
-on every Agent/Toolkit creation:
+on every assistant run:
 
 - `achievement-bullets`
 - `ats-optimization`
@@ -69,10 +73,10 @@ description: Concise trigger description for the agent
 Detailed workflow, examples, and limitations.
 ```
 
-AgentScope injects skill names/descriptions into the system prompt. When a skill
-matches the request, the agent calls `Skill({ name })` to load the full file.
-Skills provide instructions only: they cannot bypass mode restrictions, patch
-validation, or proposal confirmation.
+The skill catalog (names/descriptions) is injected into the system prompt. When a
+skill matches the request, the agent calls `Skill({ name })` to load the full
+file. Skills provide instructions only: they cannot bypass mode restrictions,
+patch validation, or proposal confirmation.
 
 Use `GET /api/ai/skills` to inspect enabled skills without exposing filesystem
 paths. The dedicated **Settings** page (`/settings`) lists enabled skills with
@@ -147,5 +151,6 @@ Defined in `resumePatchSchema` (`patch.ts`), with stricter runtime checks in `pa
 - `src/lib/ai/prompts.test.ts` — edit/plan prompt contracts for delete/reorder/date formats
 - `src/lib/ai/client/stream.test.ts` — NDJSON chunk parsing
 - `src/lib/ai/client/reducer.test.ts` — UI stream reducer
+- `src/lib/ai/skills.test.ts` — skill discovery and catalog helpers
 - `src/lib/i18n.test.ts` — locale `itemDatePlaceholder` coverage
 - `src/lib/resume/format.test.ts` — year-only `itemDateRange` display

@@ -26,8 +26,8 @@ Resume Pro is an open-source, local-first AI resume editor for managing resumes,
 - Drizzle ORM
 - Workspace folder + isomorphic-git (resumes / JDs)
 - SQLite / Postgres (legacy / AI session)
-- AgentScope for the resume assistant
-- LangChain for job fit analysis
+- LangGraph for the resume assistant
+- LangChain for job fit analysis and other one-shot model calls
 - OpenAI-compatible AI APIs
 - Electron
 
@@ -95,7 +95,7 @@ AI_API_KEY=your-api-key
 AI_API_MODEL=gpt-4o-mini
 ```
 
-Any provider that exposes an OpenAI-compatible base URL can be used. The same settings are shared by the AgentScope resume assistant and LangChain job fit analysis. See [`.env.example`](./.env.example) and the [AI documentation](./docs/ai.md) for optional model, temperature, history, and skill settings.
+Any provider that exposes an OpenAI-compatible base URL can be used. The same settings are shared by the LangGraph resume assistant and LangChain job fit analysis. See [`.env.example`](./.env.example) and the [AI documentation](./docs/ai.md) for optional model, temperature, history, and skill settings.
 
 If `AI_API_KEY` is not configured, core resume editing still works. The AI assistant and job fit analysis will prompt for AI configuration. Keep secrets out of version control.
 

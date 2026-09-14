@@ -1,47 +1,54 @@
 import "server-only";
 
-import type { Tool } from "@agentscope-ai/agentscope/tool";
+import { tool, type StructuredToolInterface } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { summarizeResume } from "@/lib/ai/context";
+import {
+  assertNotCancelled,
+  type AssistantRunContext,
+} from "@/lib/ai/langgraph/run-context";
+import { createSkillTool } from "@/lib/ai/langgraph/skill-tool";
 import {
   aiPlanSchema,
   resumePatchSchema,
 } from "@/lib/ai/patch";
 import {
+  assertPatchMatchesMutationClaims,
   summarizePatches,
   validateResumePatches,
-  assertPatchMatchesMutationClaims,
 } from "@/lib/ai/patch-validate";
 import type { PendingPatchProposal } from "@/lib/ai/protocol";
 import {
-  assertNotCancelled,
-  type AssistantRunContext,
-} from "@/lib/ai/agentscope/run-context";
+  formatSkillsCatalogPrompt,
+  listConfiguredAgentSkills,
+  resolveAgentSkillConfiguration,
+} from "@/lib/ai/skills";
 
 function toolJson(value: unknown) {
   return JSON.stringify(value);
 }
 
-export function createAssistantTools(context: AssistantRunContext): Tool[] {
-  const getResumeContext: Tool = {
-    name: "get_resume_context",
-    description:
-      "Read the current resume structure (title, template, selected node, and all nodes).",
-    inputSchema: z.object({}),
-    call: () => {
+export function createAssistantTools(
+  context: AssistantRunContext,
+): StructuredToolInterface[] {
+  const getResumeContext = tool(
+    () => {
       assertNotCancelled(context);
       return toolJson({
         resumeContext: summarizeResume(context.resume, context.selectedNodeId),
       });
     },
-  };
+    {
+      name: "get_resume_context",
+      description:
+        "Read the current resume structure (title, template, selected node, and all nodes).",
+      schema: z.object({}),
+    },
+  );
 
-  const getSelectedNode: Tool = {
-    name: "get_selected_node",
-    description: "Read the currently selected resume node, if any.",
-    inputSchema: z.object({}),
-    call: () => {
+  const getSelectedNode = tool(
+    () => {
       assertNotCancelled(context);
       const selected = context.resume.nodes.find(
         (node) => node.id === context.selectedNodeId,
@@ -59,17 +66,15 @@ export function createAssistantTools(context: AssistantRunContext): Tool[] {
           : null,
       });
     },
-  };
+    {
+      name: "get_selected_node",
+      description: "Read the currently selected resume node, if any.",
+      schema: z.object({}),
+    },
+  );
 
-  const draftResumePlan: Tool = {
-    name: "draft_resume_plan",
-    description:
-      "Draft a step-by-step resume improvement plan for user confirmation. Do not claim the resume was modified.",
-    inputSchema: z.object({
-      message: z.string().min(1),
-      plan: aiPlanSchema,
-    }),
-    call: (input) => {
+  const draftResumePlan = tool(
+    (input) => {
       assertNotCancelled(context);
       const parsed = z
         .object({
@@ -96,17 +101,19 @@ export function createAssistantTools(context: AssistantRunContext): Tool[] {
         plan,
       });
     },
-  };
+    {
+      name: "draft_resume_plan",
+      description:
+        "Draft a step-by-step resume improvement plan for user confirmation. Do not claim the resume was modified.",
+      schema: z.object({
+        message: z.string().min(1),
+        plan: aiPlanSchema,
+      }),
+    },
+  );
 
-  const proposeResumePatch: Tool = {
-    name: "propose_resume_patch",
-    description:
-      "Propose structured resume patches for user confirmation. Never apply patches yourself; the app saves only after the user confirms. Multi-item nodes upsert items by default; use removeItemIds to delete items or replaceItems=true with ordered content.items (id required; omitted fields are preserved on existing ids) to reorder/replace.",
-    inputSchema: z.object({
-      message: z.string().min(1),
-      patches: z.array(resumePatchSchema).min(1),
-    }),
-    call: (input) => {
+  const proposeResumePatch = tool(
+    (input) => {
       assertNotCancelled(context);
       const parsed = z
         .object({
@@ -166,15 +173,40 @@ export function createAssistantTools(context: AssistantRunContext): Tool[] {
           "Patch proposal recorded. Wait for the user to confirm before assuming changes are saved.",
       });
     },
-  };
+    {
+      name: "propose_resume_patch",
+      description:
+        "Propose structured resume patches for user confirmation. Never apply patches yourself; the app saves only after the user confirms. Multi-item nodes upsert items by default; use removeItemIds to delete items or replaceItems=true with ordered content.items (id required; omitted fields are preserved on existing ids) to reorder/replace.",
+      schema: z.object({
+        message: z.string().min(1),
+        patches: z.array(resumePatchSchema).min(1),
+      }),
+    },
+  );
 
-  if (context.mode === "chat") {
-    return [getResumeContext, getSelectedNode];
+  const modeTools: StructuredToolInterface[] =
+    context.mode === "chat"
+      ? [getResumeContext, getSelectedNode]
+      : context.mode === "plan" && context.action === "send"
+        ? [getResumeContext, getSelectedNode, draftResumePlan]
+        : [getResumeContext, getSelectedNode, proposeResumePatch];
+
+  const skillConfiguration = resolveAgentSkillConfiguration();
+  if (skillConfiguration.enabled) {
+    const skills = listConfiguredAgentSkills(skillConfiguration);
+    if (skills.length > 0) {
+      modeTools.push(createSkillTool(context));
+    }
   }
 
-  if (context.mode === "plan" && context.action === "send") {
-    return [getResumeContext, getSelectedNode, draftResumePlan];
+  return modeTools;
+}
+
+export function skillsSystemPromptSuffix() {
+  const configuration = resolveAgentSkillConfiguration();
+  if (!configuration.enabled) {
+    return "";
   }
 
-  return [getResumeContext, getSelectedNode, proposeResumePatch];
+  return formatSkillsCatalogPrompt(listConfiguredAgentSkills(configuration));
 }

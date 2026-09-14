@@ -24,7 +24,7 @@ file write.
 
 Decide the command by what changed:
 
-- **Touched `src/lib/ai/**` (excluding `src/lib/ai/agentscope/**`)** → run
+- **Touched `src/lib/ai/**` (excluding `src/lib/ai/langgraph/**`)** → run
   coverage, which also enforces the ≥90% threshold on `src/lib/ai/**`:
 
   ```bash

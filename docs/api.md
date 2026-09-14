@@ -21,7 +21,7 @@ Delete a resume (nodes cascade).
 
 ### `POST /api/ai`
 
-Streaming resume assistant powered by AgentScope. See [ai.md](./ai.md).
+Streaming resume assistant powered by LangGraph. See [ai.md](./ai.md).
 
 - **Body**: `resumeId`, `mode`, `message`, `resumeSnapshot`, optional `action`, `plan`, `locale`, `selectedNodeId`, `messages`
 - **Response**: NDJSON stream of assistant events (`run_started`, `text_delta`, `plan_ready`, `proposal_ready`, …)
@@ -79,7 +79,7 @@ Lightweight session sync (mode / pending plan selection). Server remains authori
 
 ### `GET /api/ai/skills`
 
-List AgentScope skills available to the resume assistant.
+List assistant skills available to the resume assistant.
 
 - **Response**: `{ enabled, skills: [{ name, description, source }] }`
 - Filesystem paths and full skill instructions are not exposed to the browser.

@@ -4,7 +4,7 @@ import { SettingsPage } from "@/components/settings-page";
 import {
   listConfiguredAgentSkills,
   resolveAgentSkillConfiguration,
-} from "@/lib/ai/agentscope/skills";
+} from "@/lib/ai/skills";
 import { isElectronRuntime, readElectronAiConfig } from "@/lib/electron-env";
 import { dictionaries, resolveLocale } from "@/lib/i18n";
 import {

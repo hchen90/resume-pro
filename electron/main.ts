@@ -132,7 +132,7 @@ WORKSPACE_PATH=${path.join(configDir, "workspace")}
 # DATABASE_PROVIDER=postgres
 # DATABASE_URL=postgres://user:password@localhost:5432/resume_pro
 
-# AI - OpenAI-compatible LangChain configuration
+# AI - OpenAI-compatible LangChain / LangGraph configuration
 AI_API_URL=https://api.openai.com/v1
 AI_API_KEY=
 AI_API_MODEL=gpt-4o-mini

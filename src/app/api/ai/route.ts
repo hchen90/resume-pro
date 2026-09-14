@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createAssistantEventStream } from "@/lib/ai/agentscope/runner";
+import { createAssistantEventStream } from "@/lib/ai/langgraph/runner";
 import { resolveAssistantHistoryConfig } from "@/lib/ai/assistant-history-config";
 import { createPendingArtifactFromProposal } from "@/lib/ai/change-artifact";
 import { dryRunResumePatches } from "@/lib/ai/change-diff";

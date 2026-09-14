@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import {
   listConfiguredAgentSkills,
   resolveAgentSkillConfiguration,
-} from "@/lib/ai/agentscope/skills";
+} from "@/lib/ai/skills";
 
 export const runtime = "nodejs";
 

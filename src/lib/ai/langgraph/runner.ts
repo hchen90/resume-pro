@@ -1,13 +1,21 @@
 import "server-only";
 
-import { UserMsg } from "@agentscope-ai/agentscope/message";
+import { HumanMessage } from "@langchain/core/messages";
+import { GraphRecursionError } from "@langchain/langgraph";
 
-import { createResumeAssistantAgent } from "@/lib/ai/agentscope/factory";
-import { mapAgentScopeEvent } from "@/lib/ai/agentscope/map-events";
-import { acquireResumeAssistantLock } from "@/lib/ai/agentscope/run-lock";
-import { createAssistantRunContext } from "@/lib/ai/agentscope/run-context";
 import { resolveAssistantHistoryConfig } from "@/lib/ai/assistant-history-config";
 import { summarizeResume } from "@/lib/ai/context";
+import {
+  createResumeAssistantGraph,
+  resolveAssistantRecursionLimit,
+} from "@/lib/ai/langgraph/factory";
+import {
+  mapGraphFatalError,
+  mapLangGraphStreamEvent,
+} from "@/lib/ai/langgraph/map-events";
+import { createAssistantRunContext } from "@/lib/ai/langgraph/run-context";
+import { acquireResumeAssistantLock } from "@/lib/ai/langgraph/run-lock";
+import type { AiPlan } from "@/lib/ai/patch";
 import {
   approvedPlanExecutionPrompt,
   userPrompt,
@@ -19,7 +27,6 @@ import {
 } from "@/lib/ai/protocol";
 import { hashResumeSnapshot } from "@/lib/ai/snapshot";
 import type { AiMessage, AiMode } from "@/lib/ai/types";
-import type { AiPlan } from "@/lib/ai/patch";
 import type { Locale } from "@/lib/i18n";
 import type { ResumeWithNodes } from "@/lib/resume/types";
 
@@ -109,19 +116,21 @@ async function* runAssistantUnlocked(
     approvedPlanText,
   });
 
-  const agent = createResumeAssistantAgent(context);
+  const graph = createResumeAssistantGraph(context);
   let assistantText = "";
   let fatalError: string | null = null;
 
   try {
-    const stream = agent.replyStream({
-      msgs: UserMsg({
-        name: "user",
-        content: prompt,
-      }),
-    });
+    const eventStream = graph.streamEvents(
+      { messages: [new HumanMessage(prompt)] },
+      {
+        version: "v2",
+        recursionLimit: resolveAssistantRecursionLimit(context),
+        signal: input.signal,
+      },
+    );
 
-    while (true) {
+    for await (const event of eventStream) {
       if (input.signal.aborted) {
         yield { type: "run_finished", runId, cancelled: true };
         return {
@@ -135,24 +144,22 @@ async function* runAssistantUnlocked(
         };
       }
 
-      const next = await stream.next();
-      if (next.done) {
-        break;
-      }
-
-      const mapped = mapAgentScopeEvent(next.value, context);
-      for (const event of mapped) {
-        if (event.type === "text_delta") {
-          assistantText += event.delta;
+      const mapped = mapLangGraphStreamEvent(event, context);
+      for (const streamEvent of mapped) {
+        if (streamEvent.type === "text_delta") {
+          assistantText += streamEvent.delta;
         }
-        if (event.type === "error" && event.fatal) {
-          fatalError = event.message;
+        if (streamEvent.type === "error" && streamEvent.fatal) {
+          fatalError = streamEvent.message;
         }
-        yield event;
+        yield streamEvent;
       }
     }
   } catch (error) {
-    if (input.signal.aborted || (error instanceof Error && error.name === "AbortError")) {
+    if (
+      input.signal.aborted ||
+      (error instanceof Error && error.name === "AbortError")
+    ) {
       yield { type: "run_finished", runId, cancelled: true };
       return {
         runId,
@@ -165,14 +172,14 @@ async function* runAssistantUnlocked(
       };
     }
 
-    fatalError =
-      error instanceof Error ? error.message : "Assistant run failed.";
-    yield {
-      type: "error",
-      runId,
-      message: fatalError,
-      fatal: true,
-    };
+    const mapped = mapGraphFatalError(
+      error instanceof GraphRecursionError
+        ? Object.assign(error, { name: "GraphRecursionError" })
+        : error,
+      context,
+    );
+    fatalError = mapped.type === "error" ? mapped.message : "Assistant run failed.";
+    yield mapped;
   }
 
   if (

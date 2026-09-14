@@ -17,7 +17,7 @@ export default defineConfig({
       include: ["src/lib/ai/**/*.ts"],
       exclude: [
         "src/lib/ai/**/*.test.ts",
-        "src/lib/ai/agentscope/**",
+        "src/lib/ai/langgraph/**",
         "src/lib/ai/types.ts",
       ],
       thresholds: {
